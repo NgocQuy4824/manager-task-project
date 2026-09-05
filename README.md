@@ -2,6 +2,12 @@
 
 Ứng dụng quản lý dự án & công việc — Next.js 14 (App Router) + Prisma (MySQL) + NextAuth + shadcn/ui.
 
+# Quy tắc đặt tên nhánh 
+
+- feature/tên-tính-năng 
+- bugfix/sửa-lỗi
+- update/cập-nhật-thêm-tính-năng
+
 ## Tech stack
 
 - **Framework:** Next.js 14 (App Router), TypeScript
