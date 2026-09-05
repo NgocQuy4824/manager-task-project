@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Task Manager
 
-## Getting Started
+Ứng dụng quản lý dự án & công việc — Next.js 14 (App Router) + Prisma (MySQL) + NextAuth + shadcn/ui.
 
-First, run the development server:
+## Tech stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Framework:** Next.js 14 (App Router), TypeScript
+- **DB:** MySQL (Prisma 7)
+- **Auth:** NextAuth v4 (Credentials, JWT, bcryptjs)
+- **UI:** shadcn/ui, Tailwind CSS, lucide-react
+- **Form/Validation:** react-hook-form + zod
+- **Data:** TanStack Query (server state), Zustand (client state)
+- **Table:** TanStack Table
+- **Drag & Drop:** @dnd-kit
+- **Charts:** Recharts
+
+## Cấu trúc thư mục
+
+```
+app/
+  (auth)/            # login, register — layout riêng, không sidebar
+  (dashboard)/       # protected — sidebar + header (projects, tasks, users, dashboard)
+  api/               # API route handlers (thin, gọi lib/)
+components/
+  ui/                # shadcn components (thêm bằng `npx shadcn@latest add <name>`)
+  layout/            # header, sidebar, user-nav
+  providers.tsx      # SessionProvider + QueryClientProvider
+features/
+  auth|users|projects|tasks|dashboard/
+    components/ hooks/ schemas/ types/ stores/   # mỗi feature tự khép kín
+lib/
+  db.ts              # PrismaClient singleton (driver adapter mariadb)
+  auth.ts            # NextAuth config (Credentials + JWT + role)
+  env.ts             # zod env validation
+  constants.ts       # ROLES, TASK_STATUSES, PRIORITIES
+  query-client.ts    # TanStack Query factory
+  validations/       # zod schemas (auth, user, project, task)
+  workflow/          # pure functions: determineWorkflow, canTransition, canApprove
+hooks/               # global hooks (useDebounce...)
+stores/              # global zustand stores (nếu cần)
+types/               # global types (next-auth augmentation)
+prisma/
+  schema.prisma      # User, Project, ProjectMember, Task + enums
+  seed.ts            # seed admin/manager/member + project + tasks mẫu
+middleware.ts        # bảo vệ route (chưa login → /login)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Nguyên tắc:** mỗi feature tự chứa UI/hooks/schemas trong `features/<domain>/`. Thứ gì 2+ feature dùng chung → đưa lên `lib/` hoặc `components/`. API route chỉ là thin handler gọi `lib/`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+cp .env.example .env      # rồi điền DATABASE_URL + NEXTAUTH_SECRET
+npx prisma generate
+npx prisma migrate dev    # tạo bảng (cần DATABASE_URL thật)
+npm run db:seed           # seed dữ liệu mẫu
+npm run dev
+```
 
-## Learn More
+Tạo `NEXTAUTH_SECRET`: `openssl rand -base64 32`
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Script | Mô tả |
+|---|---|
+| `npm run dev` | Chạy dev server |
+| `npm run build` | Build production |
+| `npm run db:generate` | Sinh Prisma client |
+| `npm run db:migrate` | Tạo migration + áp dụng |
+| `npm run db:push` | Push schema (dev nhanh) |
+| `npm run db:studio` | Mở Prisma Studio |
+| `npm run db:seed` | Seed dữ liệu mẫu |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Workflow 3 luồng (task approval)
 
-## Deploy on Vercel
+Logic ở `lib/workflow/` (pure functions, test được độc lập):
+- **Luồng 1:** creator ≠ assignee, assignee ≠ executor (3 người) → cần duyệt
+- **Luồng 2:** creator = assignee, khác executor → cần duyệt
+- **Luồng 3:** assignee = executor (tự giao tự làm) → không cần duyệt
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Hàm: `determineWorkflow(task)`, `canTransition(task, user, targetStatus)`, `canApprove(task, user)`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Thêm component shadcn
+
+```bash
+npx shadcn@latest add button card dialog form table select dropdown-menu
+```
