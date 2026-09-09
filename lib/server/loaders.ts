@@ -83,8 +83,12 @@ export async function loadProjects(user: SessionUser, params: ProjectsListParams
   const [projects, total] = await Promise.all([
     db.project.findMany({
       where: where as never,
-      include: {
-        owner: { select: { id: true, name: true, email: true } },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        ownerId: true,
+        createdAt: true,
         _count: { select: { members: true, tasks: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -94,7 +98,17 @@ export async function loadProjects(user: SessionUser, params: ProjectsListParams
     db.project.count({ where: where as never }),
   ])
 
-  return { data: projects as unknown as ProjectListItem[], total, page, pageSize }
+  // Ghép owner thủ công thay vì `include`: nếu một project trỏ tới ownerId
+  // không còn tồn tại (dữ liệu mồ côi), Prisma sẽ ném lỗi khi include quan hệ
+  // bắt buộc. Cách này để owner trống cho đúng dòng đó thay vì sập cả danh sách.
+  const ownerIds = Array.from(new Set(projects.map((p) => p.ownerId)))
+  const owners = ownerIds.length
+    ? await db.user.findMany({ where: { id: { in: ownerIds } }, select: { id: true, name: true, email: true } })
+    : []
+  const ownerMap = new Map(owners.map((o) => [o.id, o]))
+  const data = projects.map((p) => ({ ...p, owner: ownerMap.get(p.ownerId) }))
+
+  return { data: data as unknown as ProjectListItem[], total, page, pageSize }
 }
 
 export type UsersListParams = { page: number; pageSize: number; search?: string }
