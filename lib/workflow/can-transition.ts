@@ -1,5 +1,5 @@
 import type { TaskStatusType } from "@/lib/constants"
-import { determineWorkflow, type WorkflowInput } from "./determine-workflow"
+import type { WorkflowInput } from "./determine-workflow"
 
 type TransitionTask = WorkflowInput & {
   status: TaskStatusType
@@ -12,13 +12,20 @@ type TransitionUser = {
   role: string
 }
 
-// Ma trận chuyển trạng thái cho phép (đơn giản — sẽ mở rộng theo yêu cầu thực tế)
-const ALLOWED_TRANSITIONS: Record<TaskStatusType, TaskStatusType[]> = {
-  TODO: ["IN_PROGRESS", "CANCELLED"],
-  IN_PROGRESS: ["PENDING_APPROVAL", "TODO", "CANCELLED"],
-  PENDING_APPROVAL: ["DONE", "IN_PROGRESS", "CANCELLED"],
-  DONE: [],
-  CANCELLED: ["TODO"],
+// Luồng tuyến tính: PENDING_APPROVAL → TODO → IN_PROGRESS → PENDING_ACCEPTANCE → DONE
+// Nhánh phụ: PENDING_ACCEPTANCE → TODO (yêu cầu làm lại), DONE → REJECTED (từ chối), REJECTED → TODO (làm lại)
+// Không có đường nào trỏ về PENDING_APPROVAL (chỉ là trạng thái khởi điểm).
+export const ALLOWED_TRANSITIONS: Record<TaskStatusType, TaskStatusType[]> = {
+  PENDING_APPROVAL: ["TODO"],
+  TODO: ["IN_PROGRESS"],
+  IN_PROGRESS: ["PENDING_ACCEPTANCE"],
+  PENDING_ACCEPTANCE: ["DONE", "TODO"],
+  DONE: ["REJECTED"],
+  REJECTED: ["TODO"],
+}
+
+export function isAllowedAdjacent(from: TaskStatusType, to: TaskStatusType): boolean {
+  return (ALLOWED_TRANSITIONS[from] ?? []).includes(to)
 }
 
 export function canTransition(
@@ -26,30 +33,46 @@ export function canTransition(
   user: TransitionUser,
   targetStatus: TaskStatusType,
 ): boolean {
-  // Admin luôn được chuyển
-  if (user.role === "ADMIN") return true
-
-  // Kiểm tra ma trận chuyển trạng thái
+  // Kiểm tra ma trận chuyển trạng thái — áp dụng cho mọi role kể cả ADMIN:
+  // không được nhảy cóc (chỉ đi tới trạng thái kề hợp lệ) và không đường nào quay về PENDING_APPROVAL.
   const allowed = ALLOWED_TRANSITIONS[task.status] ?? []
   if (!allowed.includes(targetStatus)) return false
 
-  const workflow = determineWorkflow(task)
+  // Sau khi đã hợp lệ theo ma trận, ADMIN được thực hiện mọi hành động (không cần là người liên quan).
+  if (user.role === "ADMIN") return true
+
   const isCreator = user.id === task.creatorId
   const isAssignee = user.id === task.assigneeId
   const isExecutor = user.id === task.executorId
+  const isManager = user.role === "MANAGER"
 
-  // Luồng 1: cần quyền của creator/assignee để duyệt
-  // Luồng 2: creator (= assignee) có quyền
-  // Luồng 3: assignee (= executor) tự chuyển đến DONE không cần duyệt
-  if (workflow === 3 && targetStatus === "DONE" && isExecutor) return true
+  switch (targetStatus) {
+    // Duyệt khởi đầu (PENDING_APPROVAL → TODO): người tạo / người được giao / MANAGER
+    case "TODO":
+      if (task.status === "PENDING_APPROVAL")
+        return isCreator || isAssignee || isManager
+      // Yêu cầu làm lại (PENDING_ACCEPTANCE → TODO): người review
+      if (task.status === "PENDING_ACCEPTANCE")
+        return isCreator || isManager
+      // Làm lại (REJECTED → TODO): bất kỳ người liên quan
+      return isCreator || isAssignee || isExecutor
 
-  // Các trường hợp còn lại: chỉ creator/assignee hoặc MANAGER được chuyển sang PENDING_APPROVAL/DONE
-  if (targetStatus === "PENDING_APPROVAL" && (isExecutor || isCreator)) return true
-  if (targetStatus === "DONE" && (isAssignee || isCreator || user.role === "MANAGER"))
-    return true
+    // Bắt đầu làm (TODO → IN_PROGRESS): người làm
+    case "IN_PROGRESS":
+      return isExecutor || isAssignee
 
-  // Chuyển thường (TODO ↔ IN_PROGRESS, CANCELLED) — executor hoặc creator được
-  if (isExecutor || isCreator || isAssignee) return true
+    // Gửi nghiệm thu (IN_PROGRESS → PENDING_ACCEPTANCE): người làm / người tạo
+    case "PENDING_ACCEPTANCE":
+      return isExecutor || isAssignee || isCreator
+
+    // Nghiệm thu hoàn thành (PENDING_ACCEPTANCE → DONE): người review
+    case "DONE":
+      return isCreator || isManager
+
+    // Từ chối sau hoàn thành (DONE → REJECTED): người liên quan / MANAGER
+    case "REJECTED":
+      return isCreator || isAssignee || isManager
+  }
 
   return false
 }

@@ -1,14 +1,15 @@
-// Prisma schema — Task Manager (MySQL)
-// Roles: ADMIN / MANAGER / MEMBER — 3 role như đã thống nhất
-// Workflow: 3 luồng dựa trên creator/assignee/executor, trạng thái TODO → IN_PROGRESS → PENDING_APPROVAL → DONE
+// Prisma schema — Task Manager (MongoDB Atlas)
+// Roles: ADMIN / MANAGER / MEMBER
+// Workflow: 3 luồng dựa trên creator/assignee/executor
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -18,11 +19,12 @@ enum Role {
 }
 
 enum TaskStatus {
+  PENDING_APPROVAL
   TODO
   IN_PROGRESS
-  PENDING_APPROVAL
+  PENDING_ACCEPTANCE
   DONE
-  CANCELLED
+  REJECTED
 }
 
 enum TaskPriority {
@@ -33,7 +35,7 @@ enum TaskPriority {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @map("_id")
   email     String   @unique
   password  String // bcrypt hash
   name      String?
@@ -47,12 +49,13 @@ model User {
   createdTasks   Task[]          @relation("TaskCreator")
   assignedTasks  Task[]          @relation("TaskAssignee")
   executedTasks  Task[]          @relation("TaskExecutor")
+  taskTransitions TaskTransition[] @relation("TaskTransitionActor")
 }
 
 model Project {
-  id          String   @id @default(cuid())
+  id          String   @id @default(cuid()) @map("_id")
   name        String
-  description String?  @db.Text
+  description String?
   ownerId     String
   owner       User     @relation("ProjectOwner", fields: [ownerId], references: [id])
   createdAt   DateTime @default(now())
@@ -65,29 +68,30 @@ model Project {
 }
 
 model ProjectMember {
-  id        String  @id @default(cuid())
+  id        String  @id @default(cuid()) @map("_id")
   projectId String
   userId    String
   role      Role    @default(MEMBER)
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
 
   @@unique([projectId, userId])
   @@index([userId])
 }
 
 model Task {
-  id              String       @id @default(cuid())
+  id              String       @id @default(cuid()) @map("_id")
   title           String
-  description     String?      @db.Text
+  description     String?
   status          TaskStatus   @default(TODO)
   priority        TaskPriority @default(MEDIUM)
   dueDate         DateTime?
   isDraft         Boolean      @default(false)
   pendingApproval Boolean      @default(false)
+  reviewNote      String?
 
   projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id])
 
   creatorId  String
   creator    User    @relation("TaskCreator", fields: [creatorId], references: [id])
@@ -95,6 +99,8 @@ model Task {
   assignee   User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
   executorId String?
   executor   User?   @relation("TaskExecutor", fields: [executorId], references: [id])
+
+  transitions TaskTransition[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -105,4 +111,20 @@ model Task {
   @@index([executorId])
   @@index([status])
   @@index([priority])
+}
+
+model TaskTransition {
+  id        String      @id @default(cuid()) @map("_id")
+  taskId    String
+  from      TaskStatus?
+  to        TaskStatus
+  actorId   String
+  reason    String?
+  createdAt DateTime    @default(now())
+
+  task  Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actor User @relation("TaskTransitionActor", fields: [actorId], references: [id])
+
+  @@index([taskId, createdAt])
+  @@index([actorId])
 }

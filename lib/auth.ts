@@ -31,10 +31,19 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = (user as { id: string }).id
         token.role = (user as { role: string }).role
+      } else if (trigger === "update" && token.id) {
+        // Chỉ refresh role từ DB khi client chủ động gọi update() —
+        // tránh 1 round-trip Mongo cho MỌI request (getSession).
+        try {
+          const fresh = await db.user.findUnique({ where: { id: token.id as string }, select: { role: true } })
+          if (fresh) token.role = fresh.role as string
+        } catch {
+          // giữ token cũ nếu DB lỗi
+        }
       }
       return token
     },

@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-export const taskStatusEnum = z.enum(["TODO", "IN_PROGRESS", "PENDING_APPROVAL", "DONE", "CANCELLED"])
+export const taskStatusEnum = z.enum(["PENDING_APPROVAL", "TODO", "IN_PROGRESS", "PENDING_ACCEPTANCE", "DONE", "REJECTED"])
 export const taskPriorityEnum = z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"])
 
 export const createTaskSchema = z.object({
@@ -41,6 +41,12 @@ export const taskQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 })
 
+export const transitionTaskSchema = z.object({
+  status: taskStatusEnum,
+  reason: z.string().min(1, "Vui lòng nhập lý do").max(10000).optional(),
+})
+
 export type CreateTaskInput = z.infer<typeof createTaskSchema>
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>
 export type TaskQueryInput = z.infer<typeof taskQuerySchema>
+export type TransitionTaskInput = z.infer<typeof transitionTaskSchema>
