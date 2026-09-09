@@ -41,7 +41,7 @@ lib/
   constants.ts       # ROLES, TASK_STATUSES, PRIORITIES
   query-client.ts    # TanStack Query factory
   validations/       # zod schemas (auth, user, project, task)
-  workflow/          # pure functions: determineWorkflow, canTransition, canApprove
+  workflow/          # pure functions: determineWorkflow, canTransition
 hooks/               # global hooks (useDebounce...)
 stores/              # global zustand stores (nếu cần)
 types/               # global types (next-auth augmentation)
@@ -85,7 +85,7 @@ Logic ở `lib/workflow/` (pure functions, test được độc lập):
 - **Luồng 2:** creator = assignee, khác executor → cần duyệt
 - **Luồng 3:** assignee = executor (tự giao tự làm) → không cần duyệt
 
-Hàm: `determineWorkflow(task)`, `canTransition(task, user, targetStatus)`, `canApprove(task, user)`.
+Hàm: `determineWorkflow(task)`, `canTransition(task, user, targetStatus)`.
 
 ## Thêm component shadcn
 

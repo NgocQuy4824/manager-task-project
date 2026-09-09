@@ -75,7 +75,6 @@ async function main() {
         executorId: manager.id,
       },
     ],
-    skipDuplicates: true,
   })
 
   console.log("Seed done:", { project: project.name })

@@ -1,0 +1,725 @@
+
+> manager-task-project@0.1.0 dev
+> next dev
+
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3000
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1790ms
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 790ms (180 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 5.7s (945 modules)
+ ✓ Compiled in 423ms (330 modules)
+ GET / 307 in 6135ms
+ ○ Compiling /projects ...
+ ✓ Compiled /projects in 5.5s (1114 modules)
+ GET /projects 200 in 6763ms
+ ✓ Compiled /api/auth/[...nextauth] in 228ms (741 modules)
+ GET /api/auth/session 200 in 791ms
+ GET /api/auth/session 200 in 17ms
+ GET /api/auth/session 200 in 37ms
+ ○ Compiling /tasks ...
+ ✓ Compiled /tasks in 2.1s (1528 modules)
+ GET /tasks?_rsc=eoqlg 200 in 748ms
+ GET /api/auth/session 200 in 61ms
+ ○ Compiling /api/users ...
+ ✓ Compiled /api/users in 776ms (1041 modules)
+ ✓ Compiled (1047 modules)
+ GET /api/users?pageSize=100 200 in 1625ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 1686ms
+ GET /api/projects?pageSize=50 200 in 1757ms
+ GET /api/projects?pageSize=100 200 in 2152ms
+ GET /api/auth/session 200 in 36ms
+ GET /projects?_rsc=j3so0 200 in 233ms
+ ○ Compiling /users ...
+ ✓ Compiled /users in 640ms (1646 modules)
+ GET /users?_rsc=obiuz 200 in 138ms
+ GET /?_rsc=3py13 200 in 15ms
+ GET /tasks?_rsc=eoqlg 200 in 410ms
+ GET /api/tasks?projectId=cmtqr1b260005kxkoea1tf71y&page=1&pageSize=50 200 in 806ms
+ GET /api/tasks?projectId=cmtqqzqct0002kxkowv939ut1&page=1&pageSize=50 200 in 251ms
+ GET /api/tasks?projectId=seed-project-1&page=1&pageSize=50 200 in 482ms
+ GET /api/auth/session 200 in 29ms
+ GET /api/auth/session 200 in 24ms
+ GET /api/auth/session 200 in 38ms
+ GET /tasks 200 in 743ms
+ GET /api/auth/session 200 in 41ms
+ GET /api/auth/session 200 in 24ms
+ GET /api/users?pageSize=100 200 in 224ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 194ms
+ GET /api/projects?pageSize=50 200 in 307ms
+ GET /api/tasks?pageSize=1 200 in 414ms
+ GET /api/projects?pageSize=100 200 in 687ms
+ GET /api/auth/session 200 in 50ms
+ GET /api/auth/session 200 in 22ms
+ GET /api/auth/session 200 in 26ms
+ ○ Compiling /tasks/[id] ...
+ ✓ Compiled /tasks/[id] in 600ms (1540 modules)
+ ✓ Compiled /api/tasks/[id] in 416ms (1043 modules)
+ GET /api/tasks/cmts00nsg0001kxd84hcp98un 200 in 1364ms
+ ○ Compiling /api/users ...
+ ✓ Compiled /api/users in 649ms (1046 modules)
+ ✓ Compiled (1049 modules)
+ GET /api/users?pageSize=100 200 in 1077ms
+ GET /api/projects?pageSize=50 200 in 1177ms
+ ✓ Compiled /api/tasks in 237ms (1051 modules)
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 686ms
+ GET /api/projects?pageSize=100 200 in 717ms
+ GET /api/tasks?page=1&pageSize=50 200 in 898ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 95ms
+ GET /api/tasks?page=1&pageSize=50 200 in 286ms
+ GET /api/auth/session 200 in 39ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 756ms (1648 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 897ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 648ms
+ GET /api/tasks?page=1&pageSize=50 200 in 1050ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 109ms
+ GET /tasks 200 in 698ms
+ GET /api/auth/session 200 in 71ms
+ GET /api/auth/session 200 in 34ms
+ GET /api/users?pageSize=100 200 in 183ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 127ms
+ GET /api/projects?pageSize=50 200 in 240ms
+ GET /api/tasks?pageSize=1 200 in 421ms
+ GET /api/projects?pageSize=100 200 in 750ms
+ ✓ Compiled /api/tasks/[id]/transition in 304ms (1058 modules)
+ POST /api/tasks/cmts00nsg0001kxd84hcp98un/transition 200 in 1475ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 123ms
+ GET /api/tasks?page=1&pageSize=50 200 in 317ms
+ POST /api/tasks/cmts00nsg0001kxd84hcp98un/transition 200 in 311ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 89ms
+ GET /api/tasks?page=1&pageSize=50 200 in 299ms
+ POST /api/tasks/cmts00nsg0001kxd84hcp98un/transition 200 in 308ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 101ms
+ GET /api/tasks?page=1&pageSize=50 200 in 310ms
+ ✓ Compiled /api/tasks/[id]/approve in 239ms (1060 modules)
+ POST /api/tasks/cmts00nsg0001kxd84hcp98un/approve 200 in 1009ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 104ms
+ GET /api/tasks?page=1&pageSize=50 200 in 297ms
+ POST /api/tasks/cmts00nsg0001kxd84hcp98un/transition 200 in 321ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 88ms
+ GET /api/tasks?page=1&pageSize=50 200 in 307ms
+ POST /api/tasks/cmtqocdn00007kxl4uopdrqhz/transition 200 in 293ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 92ms
+ GET /api/tasks?page=1&pageSize=50 200 in 381ms
+ GET /api/tasks/cmtsa3unx0002kxus8h4c7875 200 in 387ms
+ PATCH /api/tasks/cmtsa3unx0002kxus8h4c7875 200 in 370ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 88ms
+ GET /api/tasks/cmtsa3unx0002kxus8h4c7875 200 in 285ms
+ GET /api/tasks?page=1&pageSize=50 200 in 477ms
+ GET /api/tasks/cmtsa3unx0002kxus8h4c7875 200 in 329ms
+ GET /api/auth/session 200 in 42ms
+ ✓ Compiled in 1054ms (1653 modules)
+ ✓ Compiled /api/users in 152ms (1048 modules)
+ ✓ Compiled (1051 modules)
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 450ms
+ GET /api/projects?pageSize=50 200 in 557ms
+ GET /api/tasks?page=1&pageSize=50 200 in 729ms
+ GET /tasks?_rsc=6px4j 200 in 1098ms
+ GET /api/projects?pageSize=100 200 in 906ms
+ GET /api/users?pageSize=100 200 in 945ms
+ ✓ Compiled in 559ms (1657 modules)
+ GET /tasks?_rsc=6px4j 200 in 391ms
+ ✓ Compiled in 352ms (1657 modules)
+ GET /tasks?_rsc=6px4j 200 in 408ms
+ ✓ Compiled in 431ms (1657 modules)
+ GET /tasks?_rsc=6px4j 200 in 376ms
+ ✓ Compiled in 314ms (1657 modules)
+ GET /tasks?_rsc=6px4j 200 in 395ms
+ ✓ Compiled in 314ms (1657 modules)
+ GET /tasks?_rsc=6px4j 200 in 361ms
+ ✓ Compiled in 441ms (1657 modules)
+ GET /tasks?_rsc=6px4j 200 in 450ms
+ ✓ Compiled in 405ms (1655 modules)
+ GET /tasks?_rsc=6px4j 200 in 394ms
+ ✓ Compiled in 315ms (1655 modules)
+ GET /tasks?_rsc=6px4j 200 in 330ms
+ ✓ Compiled in 458ms (1655 modules)
+ GET /tasks?_rsc=6px4j 200 in 388ms
+ ✓ Compiled in 332ms (1655 modules)
+ GET /tasks?_rsc=6px4j 200 in 517ms
+ ✓ Compiled in 374ms (1550 modules)
+ ✓ Compiled /api/projects in 210ms (1041 modules)
+ GET /api/projects?pageSize=50 200 in 721ms
+ GET /tasks?_rsc=6px4j 200 in 967ms
+ ✓ Compiled in 392ms (1649 modules)
+ GET /tasks?_rsc=6px4j 200 in 458ms
+ ✓ Compiled in 351ms (1649 modules)
+ GET /tasks?_rsc=6px4j 200 in 505ms
+ ✓ Compiled in 339ms (1649 modules)
+ GET /tasks?_rsc=6px4j 200 in 1222ms
+ ✓ Compiled in 401ms (1649 modules)
+ GET /tasks?_rsc=6px4j 200 in 447ms
+ ✓ Compiled in 353ms (1649 modules)
+ GET /tasks?_rsc=6px4j 200 in 533ms
+ ✓ Compiled in 371ms (1649 modules)
+ GET /tasks?_rsc=6px4j 200 in 504ms
+ ✓ Compiled in 434ms (1649 modules)
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /tasks?_rsc=6px4j 200 in 369ms
+ ✓ Compiled /api/auth/[...nextauth] in 301ms (1043 modules)
+ GET /api/auth/session 200 in 362ms
+ GET /api/auth/session 200 in 9ms
+ ⨯ features\tasks\components\tasks-page.tsx (43:127) @ projectsQ
+ ⨯ ReferenceError: Cannot access 'projectsQ' before initialization
+    at eval (./features/tasks/components/tasks-page.tsx:64:24)
+    at TasksPageContent (./features/tasks/components/tasks-page.tsx:61:82)
+digest: "1205898563"
+[0m [90m 41 |[39m   [36mconst[39m initialProjectId [33m=[39m sp[33m.[39m[36mget[39m([32m"projectId"[39m) [33m?[39m[33m?[39m [32m""[39m[0m
+[0m [90m 42 |[39m[0m
+[0m[31m[1m>[22m[39m[90m 43 |[39m   [36mconst[39m [filters[33m,[39m setFilters] [33m=[39m useState[33m<[39m[33mTaskFilters[39m[33m>[39m(() [33m=>[39m initialProjectId [33m?[39m { projectId[33m:[39m initialProjectId } [33m:[39m { projectId[33m:[39m projectsQ[33m.[39mdata[33m?[39m[33m.[39mdata[33m?[39m[33m.[39m[[35m0[39m][33m?[39m[33m.[39mid })[0m
+[0m [90m    |[39m                                                                                                                               [31m[1m^[22m[39m[0m
+[0m [90m 44 |[39m   [36mconst[39m [searchInput[33m,[39m setSearchInput] [33m=[39m useState([32m""[39m)[0m
+[0m [90m 45 |[39m   [36mconst[39m [page[33m,[39m setPage] [33m=[39m useState([35m1[39m)[0m
+[0m [90m 46 |[39m   [36mconst[39m [view[33m,[39m setView] [33m=[39m useState[33m<[39m[32m"list"[39m [33m|[39m [32m"kanban"[39m[33m>[39m([32m"kanban"[39m)[0m
+ GET /tasks 200 in 3658ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled in 663ms (1651 modules)
+ GET /tasks 200 in 1095ms
+ GET /api/auth/session 200 in 36ms
+ GET /api/auth/session 200 in 14ms
+ ✓ Compiled /api/users in 297ms (1046 modules)
+ ✓ Compiled (1049 modules)
+ GET /api/projects?pageSize=100 200 in 1984ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 2019ms
+ GET /api/users?pageSize=100 200 in 2064ms
+ GET /api/projects?pageSize=50 200 in 2271ms
+ GET /api/tasks?pageSize=1 200 in 2461ms
+ ✓ Compiled in 385ms (1657 modules)
+ GET /tasks?_rsc=6px4j 200 in 64ms
+ GET /api/auth/session 200 in 40ms
+ GET /projects 200 in 289ms
+ GET /api/auth/session 200 in 24ms
+ GET /api/auth/session 200 in 13ms
+ GET /tasks?_rsc=eoqlg 200 in 34ms
+ GET /api/users?pageSize=100 200 in 183ms
+ GET /api/projects?pageSize=50 200 in 216ms
+ GET /api/projects?pageSize=100 200 in 278ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 567ms
+ GET /api/tasks?projectId=seed-project-1&page=1&pageSize=50 200 in 366ms
+ ✓ Compiled /api/projects/[id]/members in 399ms (1051 modules)
+ GET /api/projects/seed-project-1/members 200 in 1118ms
+ GET /api/auth/csrf 200 in 3058ms
+ GET /api/auth/csrf 200 in 14ms
+ POST /api/auth/signout 200 in 17ms
+ POST /api/auth/signout 200 in 17ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 1288ms (1679 modules)
+ GET /login 200 in 1488ms
+ GET /tasks?_rsc=6px4j 200 in 115ms
+ GET /api/auth/session 200 in 36ms
+ GET /api/auth/session 200 in 10ms
+ GET /api/auth/providers 200 in 17ms
+ GET /api/auth/csrf 200 in 10ms
+ POST /api/auth/callback/credentials 200 in 372ms
+ GET /api/auth/session 200 in 20ms
+ ✓ Compiled / in 262ms (1074 modules)
+ GET /?_rsc=1p60s 200 in 66ms
+ GET /projects?_rsc=7ilda 200 in 195ms
+ GET /tasks?_rsc=eoqlg 200 in 26ms
+ GET /api/users?pageSize=100 403 in 70ms
+ GET /api/projects?pageSize=50 200 in 171ms
+ GET /api/projects?pageSize=100 200 in 168ms
+ GET /api/tasks?creatorId=cmts9zltk0000kxusyft527tq&pageSize=100 200 in 240ms
+ GET /api/users?pageSize=100 403 in 9ms
+ GET /api/users?pageSize=100 403 in 11ms
+ GET /api/users?pageSize=100 403 in 7ms
+ GET /api/auth/session 200 in 64ms
+ GET /api/auth/session 200 in 34ms
+ GET /api/auth/session 200 in 26ms
+ GET /api/projects/cmtqr1b260005kxkoea1tf71y/members 200 in 891ms
+ GET /api/tasks?projectId=cmtqr1b260005kxkoea1tf71y&page=1&pageSize=50 200 in 2084ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 996ms (1689 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 1093ms
+ GET /tasks?_rsc=6px4j 200 in 108ms
+ GET /tasks?_rsc=altsz 200 in 108ms
+ ✓ Compiled /api/tasks/[id]/transition in 263ms (1081 modules)
+ POST /api/tasks/cmtsa3unx0002kxus8h4c7875/transition 200 in 837ms
+ GET /api/tasks?creatorId=cmts9zltk0000kxusyft527tq&pageSize=100 200 in 180ms
+ GET /api/tasks?projectId=cmtqr1b260005kxkoea1tf71y&page=1&pageSize=50 200 in 807ms
+ GET /api/auth/session 200 in 61ms
+ GET /api/tasks?projectId=cmtqqzqct0002kxkowv939ut1&page=1&pageSize=50 200 in 1436ms
+ GET /api/projects/cmtqqzqct0002kxkowv939ut1/members 200 in 1526ms
+ GET /api/projects/seed-project-1/members 200 in 965ms
+ GET /api/tasks?projectId=seed-project-1&page=1&pageSize=50 200 in 1893ms
+ GET /api/projects/cmtqr1b260005kxkoea1tf71y/members 200 in 1280ms
+ GET /api/tasks?projectId=cmtqr1b260005kxkoea1tf71y&page=1&pageSize=50 200 in 1457ms
+ GET /api/auth/session 200 in 45ms
+ GET /api/auth/session 200 in 29ms
+ GET /api/auth/session 200 in 24ms
+ GET /api/tasks?projectId=cmtqqzqct0002kxkowv939ut1&page=1&pageSize=50 200 in 1876ms
+ GET /api/projects/cmtqqzqct0002kxkowv939ut1/members 200 in 2447ms
+ GET /api/projects/seed-project-1/members 200 in 593ms
+ GET /api/tasks?projectId=seed-project-1&page=1&pageSize=50 200 in 778ms
+ GET /api/projects/cmtqr1b260005kxkoea1tf71y/members 200 in 417ms
+ GET /api/tasks?projectId=cmtqr1b260005kxkoea1tf71y&page=1&pageSize=50 200 in 450ms
+ GET /api/auth/session 200 in 21ms
+ GET /api/auth/session 200 in 38ms
+ POST /api/tasks/cmtsa3unx0002kxus8h4c7875/transition 200 in 570ms
+ GET /api/tasks?creatorId=cmts9zltk0000kxusyft527tq&pageSize=100 200 in 304ms
+ GET /api/tasks?projectId=cmtqr1b260005kxkoea1tf71y&page=1&pageSize=50 200 in 1038ms
+ GET /api/auth/session 200 in 27ms
+ GET /api/auth/session 200 in 21ms
+ GET /api/auth/session 200 in 29ms
+ GET /api/auth/session 200 in 24ms
+ GET /api/auth/session 200 in 30ms
+ GET /api/auth/session 200 in 30ms
+ GET /api/auth/session 200 in 29ms
+ ○ Compiling /users ...
+ ✓ Compiled /users in 548ms (974 modules)
+ GET /users?_rsc=obiuz 200 in 59ms
+ GET /tasks?_rsc=eoqlg 200 in 46ms
+ ✓ Compiled /api/tasks in 276ms (1071 modules)
+ ✓ Compiled (1077 modules)
+ GET /api/users?pageSize=100 403 in 725ms
+ GET /api/projects?pageSize=50 200 in 837ms
+ GET /api/projects?pageSize=100 200 in 821ms
+ GET /api/tasks?creatorId=cmts9zltk0000kxusyft527tq&pageSize=100 200 in 1239ms
+ GET /api/users?pageSize=100 403 in 11ms
+ GET /api/auth/session 200 in 36ms
+ GET /tasks?_rsc=eoqlg 200 in 44ms
+ GET /projects?_rsc=j3so0 200 in 839ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 384ms
+ GET /api/users?pageSize=100 200 in 385ms
+ GET /api/projects?pageSize=100 200 in 926ms
+ GET /api/projects?pageSize=50 200 in 1021ms
+ GET /api/auth/session 200 in 24ms
+ GET /api/auth/session 200 in 33ms
+ ✓ Compiled /api/projects/[id]/members in 387ms (1079 modules)
+ GET /api/tasks?projectId=cmtqqzqct0002kxkowv939ut1&page=1&pageSize=50 200 in 863ms
+ GET /api/projects/cmtqqzqct0002kxkowv939ut1/members 200 in 871ms
+ GET /api/projects/seed-project-1/members 200 in 258ms
+ GET /api/tasks?projectId=seed-project-1&page=1&pageSize=50 200 in 307ms
+ POST /api/projects/seed-project-1/members 201 in 367ms
+ GET /api/projects/seed-project-1/members 200 in 236ms
+ GET /api/projects/seed-project-1/members 200 in 244ms
+ GET /api/auth/session 200 in 34ms
+ GET /api/auth/session 200 in 24ms
+ GET /tasks 200 in 334ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1242ms (1694 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 1326ms
+ GET /tasks?_rsc=6px4j 200 in 121ms
+ GET /api/auth/session 200 in 105ms
+ GET /api/auth/session 200 in 43ms
+ GET /api/users?pageSize=100 403 in 86ms
+ GET /api/projects?pageSize=100 200 in 272ms
+ GET /api/projects?pageSize=50 200 in 275ms
+ GET /api/tasks?creatorId=cmts9zltk0000kxusyft527tq&pageSize=100 200 in 233ms
+ GET /api/tasks?pageSize=1 200 in 527ms
+ GET /api/users?pageSize=100 403 in 8ms
+ GET /api/projects/seed-project-1/members 200 in 251ms
+ GET /api/tasks?projectId=seed-project-1&page=1&pageSize=50 200 in 399ms
+ ✓ Compiled /api/tasks in 1058ms (1570 modules)
+ ✓ Compiled in 1ms (1063 modules)
+ GET /api/users?pageSize=100 403 in 797ms
+ GET /api/users?pageSize=100 200 in 902ms
+ GET /tasks?_rsc=6px4j 200 in 536ms
+ GET /tasks?_rsc=6px4j 200 in 537ms
+ GET /api/projects?pageSize=50 200 in 908ms
+ GET /api/projects?pageSize=50 200 in 965ms
+ GET /api/tasks?projectId=seed-project-1&page=1&pageSize=50 200 in 1522ms
+ GET /api/tasks?projectId=seed-project-1&page=1&pageSize=50 200 in 1691ms
+ ✓ Compiled in 622ms (1675 modules)
+ GET /tasks?_rsc=6px4j 200 in 66ms
+ GET /tasks?_rsc=6px4j 200 in 67ms
+ GET /api/users?pageSize=100 403 in 32ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 116ms
+ GET /api/projects?pageSize=100 200 in 149ms
+ GET /api/projects?pageSize=100 200 in 229ms
+ GET /api/tasks?creatorId=cmts9zltk0000kxusyft527tq&pageSize=100 200 in 232ms
+ ✓ Compiled in 398ms (1675 modules)
+ GET /tasks?_rsc=6px4j 200 in 73ms
+ GET /tasks?_rsc=6px4j 200 in 74ms
+ ✓ Compiled in 175ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 32ms
+ GET /tasks?_rsc=6px4j 200 in 32ms
+ ✓ Compiled in 128ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 28ms
+ GET /tasks?_rsc=6px4j 200 in 29ms
+ ✓ Compiled in 555ms (1675 modules)
+ GET /tasks?_rsc=6px4j 200 in 62ms
+ GET /tasks?_rsc=6px4j 200 in 63ms
+ ✓ Compiled in 353ms (1675 modules)
+ GET /tasks?_rsc=6px4j 200 in 75ms
+ GET /tasks?_rsc=6px4j 200 in 75ms
+ ✓ Compiled in 125ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 33ms
+ GET /tasks?_rsc=6px4j 200 in 33ms
+ ✓ Compiled /api/auth/[...nextauth] in 254ms (1065 modules)
+ GET /api/auth/session 200 in 406ms
+ GET /tasks?_rsc=eoqlg 200 in 48ms
+ GET /projects?_rsc=j3so0 200 in 202ms
+ GET /api/projects?page=1 200 in 169ms
+ ○ Compiling /api/projects/[id]/members ...
+ ✓ Compiled /api/projects/[id]/members in 532ms (1067 modules)
+ GET /api/projects/cmtqqzqct0002kxkowv939ut1/members 200 in 1015ms
+ GET /api/tasks?projectId=cmtqqzqct0002kxkowv939ut1&page=1&pageSize=50 200 in 1019ms
+ GET /api/auth/session 200 in 37ms
+ GET /api/projects/seed-project-1/members 200 in 203ms
+ GET /api/tasks?projectId=cmtqr1b260005kxkoea1tf71y&page=1&pageSize=50 200 in 285ms
+ GET /api/projects/cmtqr1b260005kxkoea1tf71y/members 200 in 320ms
+ ✓ Compiled /api/users in 678ms (1676 modules)
+ ✓ Compiled in 0ms (1067 modules)
+ ✓ Compiled in 0ms (1067 modules)
+ ✓ Compiled in 0ms (1067 modules)
+ GET /api/projects?pageSize=50 200 in 1191ms
+ GET /api/projects?pageSize=50 200 in 1239ms
+ GET /tasks?_rsc=6px4j 200 in 1095ms
+ GET /tasks?_rsc=6px4j 200 in 1096ms
+ GET /api/users?pageSize=100 200 in 1447ms
+ ✓ Compiled in 228ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 28ms
+ GET /tasks?_rsc=6px4j 200 in 28ms
+ POST /api/tasks 201 in 507ms
+ GET /api/tasks?projectId=cmtqqzqct0002kxkowv939ut1&page=1&pageSize=50 200 in 1012ms
+ ✓ Compiled in 250ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 38ms
+ GET /tasks?_rsc=6px4j 200 in 38ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 2051ms
+ ✓ Compiled in 192ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 42ms
+ GET /tasks?_rsc=6px4j 200 in 43ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 803ms (1668 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 928ms
+ ✓ Compiled in 836ms (1682 modules)
+ GET /tasks?_rsc=6px4j 200 in 112ms
+ GET /tasks?_rsc=6px4j 200 in 114ms
+ ✓ Compiled in 371ms (1680 modules)
+ GET /tasks?_rsc=6px4j 200 in 71ms
+ GET /tasks?_rsc=6px4j 200 in 72ms
+ ✓ Compiled in 756ms (1678 modules)
+ GET /tasks?_rsc=6px4j 200 in 102ms
+ GET /tasks?_rsc=6px4j 200 in 104ms
+ ✓ Compiled in 380ms (1678 modules)
+ GET /tasks?_rsc=6px4j 200 in 74ms
+ GET /tasks?_rsc=6px4j 200 in 74ms
+ ✓ Compiled in 460ms (1678 modules)
+ GET /tasks?_rsc=6px4j 200 in 52ms
+ GET /tasks?_rsc=6px4j 200 in 51ms
+ ✓ Compiled in 335ms (1678 modules)
+ GET /tasks?_rsc=6px4j 200 in 64ms
+ GET /tasks?_rsc=6px4j 200 in 65ms
+ ✓ Compiled in 444ms (1678 modules)
+ GET /tasks?_rsc=6px4j 200 in 113ms
+ GET /tasks?_rsc=6px4j 200 in 115ms
+ ✓ Compiled in 422ms (1672 modules)
+ GET /tasks?_rsc=6px4j 200 in 138ms
+ GET /tasks?_rsc=6px4j 200 in 139ms
+ ✓ Compiled in 592ms (1573 modules)
+ GET /tasks?_rsc=6px4j 200 in 216ms
+ GET /tasks?_rsc=6px4j 200 in 217ms
+ ✓ Compiled in 424ms (1573 modules)
+ GET /tasks?_rsc=6px4j 200 in 65ms
+ GET /tasks?_rsc=6px4j 200 in 67ms
+ ✓ Compiled in 332ms (1573 modules)
+ GET /tasks?_rsc=6px4j 200 in 98ms
+ GET /tasks?_rsc=6px4j 200 in 100ms
+ ✓ Compiled in 335ms (1570 modules)
+ GET /tasks?_rsc=6px4j 200 in 65ms
+ GET /tasks?_rsc=6px4j 200 in 65ms
+ ✓ Compiled /api/auth/[...nextauth] in 199ms (962 modules)
+ GET /api/auth/session 200 in 338ms
+ GET /api/auth/session 200 in 32ms
+ ○ Compiling /api/users ...
+ ✓ Compiled /api/users in 1096ms (1059 modules)
+ GET /api/users?pageSize=100 403 in 1237ms
+ ✓ Compiled in 281ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 134ms
+ GET /tasks?_rsc=6px4j 200 in 135ms
+ ✓ Compiled in 2.6s (1671 modules)
+ GET /tasks?_rsc=6px4j 200 in 100ms
+ GET /tasks?_rsc=6px4j 200 in 99ms
+ GET /api/auth/session 200 in 53ms
+ GET /api/auth/session 200 in 48ms
+ GET /tasks 200 in 205ms
+ GET /api/auth/session 200 in 28ms
+ GET /api/auth/session 200 in 20ms
+ ○ Compiling /api/tasks ...
+ ✓ Compiled /api/tasks in 674ms (1059 modules)
+ ✓ Compiled in 0ms (1065 modules)
+ ✓ Compiled in 0ms (1065 modules)
+ ✓ Compiled in 0ms (1065 modules)
+ GET /tasks?_rsc=6px4j 200 in 1374ms
+ GET /tasks?_rsc=6px4j 200 in 1374ms
+ GET /tasks?_rsc=6px4j 200 in 22ms
+ GET /tasks?_rsc=6px4j 200 in 23ms
+ GET /api/projects?pageSize=100 200 in 3613ms
+ GET /api/projects?pageSize=50 200 in 3670ms
+ GET /api/users?pageSize=100 200 in 3723ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 3609ms
+ GET /api/tasks?pageSize=1 200 in 4291ms
+ GET /tasks 200 in 107ms
+ GET /api/auth/session 200 in 37ms
+ GET /api/auth/session 200 in 45ms
+ GET /api/users?pageSize=100 200 in 155ms
+ GET /api/projects?pageSize=50 200 in 209ms
+ GET /api/auth/session 200 in 22ms
+ GET /api/tasks?pageSize=1 200 in 587ms
+ GET /api/projects?pageSize=100 200 in 590ms
+ GET /api/tasks?creatorId=cmtqq3h5r0000kxko024u1j8s&pageSize=100 200 in 839ms
+ GET /api/auth/session 200 in 58ms
+ GET /projects?_rsc=j3so0 200 in 323ms
+ ✓ Compiled /api/projects/[id]/members in 384ms (1067 modules)
+ ✓ Compiled in 1ms (1067 modules)
+ ✓ Compiled in 0ms (1067 modules)
+ GET /api/tasks?projectId=cmtqqzqct0002kxkowv939ut1&page=1&pageSize=50 200 in 1093ms
+ ✓ Compiled in 0ms (1067 modules)
+ GET /api/projects/cmtqqzqct0002kxkowv939ut1/members 200 in 1452ms
+ GET /tasks?_rsc=6px4j 200 in 1136ms
+ GET /tasks?_rsc=6px4j 200 in 1137ms
+ GET /api/auth/session 200 in 30ms
+ GET /api/auth/session 200 in 21ms
+ GET /api/auth/session 200 in 49ms
+ GET /api/auth/session 200 in 42ms
+ GET /api/auth/session 200 in 26ms
+ GET /api/auth/session 200 in 18ms
+ GET /api/auth/session 200 in 31ms
+ GET /api/auth/session 200 in 24ms
+ GET /api/auth/session 200 in 33ms
+ GET /api/auth/session 200 in 34ms
+ GET /api/auth/session 200 in 27ms
+ GET /api/auth/session 200 in 29ms
+ ✓ Compiled in 431ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 48ms
+ GET /tasks?_rsc=6px4j 200 in 48ms
+ ✓ Compiled in 200ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 36ms
+ GET /tasks?_rsc=6px4j 200 in 36ms
+ ✓ Compiled in 218ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 32ms
+ GET /tasks?_rsc=6px4j 200 in 32ms
+ ✓ Compiled in 314ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 57ms
+ GET /tasks?_rsc=6px4j 200 in 58ms
+ ✓ Compiled in 419ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 84ms
+ GET /tasks?_rsc=6px4j 200 in 70ms
+ ✓ Compiled in 451ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 50ms
+ GET /tasks?_rsc=6px4j 200 in 50ms
+ ✓ Compiled in 175ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 31ms
+ GET /tasks?_rsc=6px4j 200 in 32ms
+ ✓ Compiled in 221ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 234ms
+ GET /tasks?_rsc=6px4j 200 in 234ms
+ ✓ Compiled in 289ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 51ms
+ GET /tasks?_rsc=6px4j 200 in 54ms
+ ✓ Compiled in 270ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 57ms
+ GET /tasks?_rsc=6px4j 200 in 56ms
+ ✓ Compiled in 308ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 36ms
+ GET /tasks?_rsc=6px4j 200 in 37ms
+ ✓ Compiled in 231ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 79ms
+ GET /tasks?_rsc=6px4j 200 in 69ms
+ ✓ Compiled in 275ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 59ms
+ GET /tasks?_rsc=6px4j 200 in 59ms
+ ✓ Compiled in 244ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 47ms
+ GET /tasks?_rsc=6px4j 200 in 48ms
+ ✓ Compiled in 228ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 33ms
+ GET /tasks?_rsc=6px4j 200 in 34ms
+ ✓ Compiled in 238ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 38ms
+ GET /tasks?_rsc=6px4j 200 in 39ms
+ ✓ Compiled in 250ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 46ms
+ GET /tasks?_rsc=6px4j 200 in 48ms
+ ✓ Compiled in 286ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 52ms
+ GET /tasks?_rsc=6px4j 200 in 53ms
+ ✓ Compiled in 354ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 32ms
+ GET /tasks?_rsc=6px4j 200 in 32ms
+ ✓ Compiled in 151ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 33ms
+ GET /tasks?_rsc=6px4j 200 in 35ms
+ ✓ Compiled in 191ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 47ms
+ GET /tasks?_rsc=6px4j 200 in 48ms
+ ✓ Compiled in 242ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 269ms
+ GET /tasks?_rsc=6px4j 200 in 271ms
+ ✓ Compiled in 328ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 274ms
+ GET /tasks?_rsc=6px4j 200 in 279ms
+ ✓ Compiled in 342ms (612 modules)
+ GET /tasks?_rsc=6px4j 200 in 54ms
+ GET /tasks?_rsc=6px4j 200 in 40ms
+ ✓ Compiled in 297ms (612 modules)
+ ⨯ SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
+    at loadManifest (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\load-manifest.js:36:25)
+    at DevServer.getNextFontManifest (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\next-server.js:750:47)
+    at DevServer.findPageComponents (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\dev\next-dev-server.js:571:43)
+    at async DevServer.renderPageComponent (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\base-server.js:1910:24)
+    at async DevServer.renderToResponseImpl (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\ngquy\manager-task-project\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  page: '/tasks'
+}
+ ⨯ SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
+    at loadManifest (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\load-manifest.js:36:25)
+    at DevServer.getNextFontManifest (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\next-server.js:750:47)
+    at DevServer.findPageComponents (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\dev\next-dev-server.js:571:43)
+    at async DevServer.renderPageComponent (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\base-server.js:1910:24)
+    at async DevServer.renderToResponseImpl (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\Users\ngquy\manager-task-project\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\Users\ngquy\manager-task-project\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  page: '/tasks'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 3.9s (1800 modules)
+ GET /api/auth/session 200 in 1667ms
+ GET /api/auth/session 200 in 39ms
+ GET /tasks?_rsc=6px4j 200 in 180ms
+ GET /tasks?_rsc=6px4j 200 in 184ms
+ GET /tasks?_rsc=6px4j 200 in 79ms
+ GET /tasks?_rsc=6px4j 200 in 86ms
+ GET /tasks?_rsc=6px4j 200 in 59ms
+ GET /tasks?_rsc=6px4j 200 in 62ms
+ GET /tasks 200 in 390ms
+ GET /tasks 200 in 391ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1548ms (1803 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 1755ms
+ GET /api/auth/session 200 in 56ms
+ GET /api/auth/session 200 in 26ms
+ ○ Compiling /api/tasks ...
+ ✓ Compiled /api/tasks in 752ms (1100 modules)
+ GET /projects 200 in 2321ms
+ ✓ Compiled in 1ms (1106 modules)
+ ✓ Compiled in 2ms (1106 modules)
+ ✓ Compiled in 1ms (1106 modules)
+ ✓ Compiled in 1024ms (1892 modules)
+ GET /api/users?pageSize=100 403 in 6543ms
+ GET /api/auth/session 200 in 4270ms
+ GET /api/auth/session 200 in 2819ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 1478ms
+ GET /api/auth/session 200 in 48ms
+ GET /api/auth/session 200 in 39ms
+ GET /api/tasks?creatorId=cmts9zltk0000kxusyft527tq&pageSize=100 200 in 7141ms
+ GET /api/projects?pageSize=50 200 in 7324ms
+ GET /api/projects?pageSize=100 200 in 7795ms
+ GET /api/tasks?pageSize=1 200 in 7904ms
+ ○ Compiling /projects/new ...
+ ✓ Compiled /projects/new in 1370ms (1901 modules)
+ GET /api/auth/session 200 in 90ms
+ POST /api/projects 201 in 349ms
+ ○ Compiling /projects/[id] ...
+ ✓ Compiled /projects/[id] in 754ms (1910 modules)
+ ✓ Compiled /api/projects/[id]/members in 362ms (1120 modules)
+ ✓ Compiled (1122 modules)
+ GET /api/users?pageSize=50 200 in 856ms
+ GET /api/projects/cmtsf1xjh0005kxlotsu2ajif/members 200 in 1091ms
+ GET /api/projects/cmtsf1xjh0005kxlotsu2ajif 200 in 1771ms
+ GET /projects?_rsc=j3so0 200 in 180ms
+ GET /api/projects?page=1 200 in 228ms
+ GET /api/projects/cmtqr1b260005kxkoea1tf71y/members 200 in 345ms
+ GET /api/projects/cmtqr1b260005kxkoea1tf71y 200 in 401ms
+ GET /api/auth/session 200 in 28ms
+ ✓ Compiled in 615ms (1913 modules)
+ GET /tasks?_rsc=6px4j 200 in 188ms
+ ✓ Compiled in 495ms (1913 modules)
+ GET /tasks?_rsc=6px4j 200 in 150ms
+ ⨯ ./features/projects/components/project-form.tsx
+Error: 
+  [31mx[0m Expected ';', '}' or <eof>
+    ,-[[36;1;4mC:\Users\ngquy\manager-task-project\features\projects\components\project-form.tsx[0m:28:1]
+ [2m28[0m |   useEffect(() => {
+ [2m29[0m |     if (data?.data) form.reset({ name: data.data.name, description: data.data.description ?? "" })
+ [2m30[0m |   }, [data]) // eslint-disable-line react-hooks/exhaustive-deps
+ [2m31[0m | c onsole.log("data",data)
+    : [31;1m|[0m[33;1m ^^^^^^[0m
+    : [31;1m`-- [31;1mThis is the expression part of an expression statement[0m[0m
+ [2m32[0m |   async function onSubmit(values: CreateProjectInput) {
+ [2m33[0m |     setServerError(null)
+ [2m34[0m |     try {
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./features/projects/components/project-form.tsx
+./app/(dashboard)/projects/new/page.tsx
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 4.9s (1901 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /api/auth/session 500 in 2988ms
+ POST /api/auth/_log 200 in 142ms
+data undefined
+ GET /tasks?_rsc=6px4j 200 in 425ms
+ GET /projects/new 200 in 465ms
+ GET /tasks 200 in 414ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1449ms (1904 modules)
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 1768ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 1377ms
+ GET /api/auth/session 200 in 155ms
+ GET /api/auth/session 200 in 110ms
+ GET /api/auth/session 200 in 105ms
+ GET /api/auth/session 200 in 110ms
+ ✓ Compiled /api/tasks in 498ms (1115 modules)
+ GET /api/users?pageSize=100 403 in 1146ms
+ GET /api/projects?pageSize=100 200 in 1336ms
+ GET /api/projects?pageSize=50 200 in 1352ms
+ GET /api/tasks?creatorId=cmts9zltk0000kxusyft527tq&pageSize=100 200 in 1701ms
+ GET /api/tasks?pageSize=1 200 in 2721ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'C:\Users\ngquy\manager-task-project\.next\cache\webpack\client-development-fallback\0.pack.gz_' -> 'C:\Users\ngquy\manager-task-project\.next\cache\webpack\client-development-fallback\0.pack.gz'
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'C:\Users\ngquy\manager-task-project\.next\cache\webpack\client-development-fallback\0.pack.gz_' -> 'C:\Users\ngquy\manager-task-project\.next\cache\webpack\client-development-fallback\0.pack.gz'
+ GET /projects?_rsc=192qy 200 in 144ms
+ GET /api/users?pageSize=50 200 in 225ms
+ GET /api/projects/cmtsf1xjh0005kxlotsu2ajif/members 200 in 293ms
+ GET /api/projects/cmtsf1xjh0005kxlotsu2ajif 200 in 302ms
+ POST /api/projects 201 in 247ms
+ GET /api/projects/cmtsf42sq0007kxlo22luzr1n/members 200 in 197ms
+ GET /api/projects/cmtsf42sq0007kxlo22luzr1n 200 in 219ms
+ GET /api/auth/session 200 in 48ms
+ GET /api/auth/session 200 in 23ms
+ GET /api/auth/session 200 in 42ms
+ GET /api/users?pageSize=100 403 in 37ms
+ GET /api/auth/session 200 in 25ms
+ GET /api/auth/session 200 in 32ms
+ GET /api/auth/session 200 in 27ms
+ ✓ Compiled in 1475ms (1809 modules)
+ GET /tasks?_rsc=6px4j 200 in 250ms
+ ✓ Compiled in 590ms (1809 modules)
+ GET /tasks?_rsc=6px4j 200 in 94ms
+ ✓ Compiled in 318ms (1809 modules)
+ GET /tasks?_rsc=6px4j 200 in 60ms
+ GET /api/auth/session 200 in 97ms
+ GET /api/auth/session 200 in 29ms
+ GET /projects?_rsc=1ehpi 200 in 313ms
+ GET /login?callbackUrl=%2F 200 in 152ms
+[?25h

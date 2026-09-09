@@ -1,0 +1,77 @@
+import { NextResponse } from "next/server"
+import { z } from "zod"
+import { db } from "@/lib/db"
+import { getSession, unauthorized, forbidden, notFound } from "@/lib/server-auth"
+
+const addMemberSchema = z.object({
+  userId: z.string().cuid(),
+  role: z.enum(["ADMIN", "MANAGER", "MEMBER"]).default("MEMBER"),
+})
+
+export async function GET(_req: Request, { params }: { params: { id: string } }) {
+  const user = await getSession()
+  if (!user) return unauthorized()
+
+  const project = await db.project.findUnique({
+    where: { id: params.id },
+    include: {
+      owner: { select: { id: true, name: true, email: true } },
+      members: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },
+    },
+  })
+  if (!project) return notFound()
+
+  const isOwner = project.ownerId === user.id
+  const isMember = project.members.some((m) => m.userId === user.id)
+  if (user.role !== "ADMIN" && !isOwner && !isMember) return forbidden()
+
+  return NextResponse.json({ data: project.members, owner: project.owner })
+}
+
+export async function POST(req: Request, { params }: { params: { id: string } }) {
+  const user = await getSession()
+  if (!user) return unauthorized()
+
+  const project = await db.project.findUnique({ where: { id: params.id } })
+  if (!project) return notFound()
+
+  const isOwner = project.ownerId === user.id
+  if (user.role !== "ADMIN" && !isOwner) return forbidden("Chỉ owner/Admin được thêm member")
+
+  const body = await req.json().catch(() => ({}))
+  const parsed = addMemberSchema.safeParse(body)
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 })
+
+  if (parsed.data.userId === project.ownerId) {
+    return NextResponse.json({ error: "Owner đã là thành viên" }, { status: 400 })
+  }
+
+  const targetUser = await db.user.findUnique({ where: { id: parsed.data.userId } })
+  if (!targetUser) return notFound("User không tồn tại")
+
+  const member = await db.projectMember.upsert({
+    where: { projectId_userId: { projectId: params.id, userId: parsed.data.userId } },
+    update: { role: parsed.data.role },
+    create: { projectId: params.id, userId: parsed.data.userId, role: parsed.data.role },
+  })
+
+  return NextResponse.json({ data: member }, { status: 201 })
+}
+
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+  const user = await getSession()
+  if (!user) return unauthorized()
+
+  const project = await db.project.findUnique({ where: { id: params.id } })
+  if (!project) return notFound()
+
+  const isOwner = project.ownerId === user.id
+  if (user.role !== "ADMIN" && !isOwner) return forbidden()
+
+  const { searchParams } = new URL(req.url)
+  const userId = searchParams.get("userId")
+  if (!userId) return NextResponse.json({ error: "Thiếu userId" }, { status: 422 })
+
+  await db.projectMember.delete({ where: { projectId_userId: { projectId: params.id, userId } } }).catch(() => null)
+  return NextResponse.json({ ok: true })
+}
