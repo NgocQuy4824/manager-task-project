@@ -14,10 +14,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   const project = await db.project.findUnique({
     where: { id: params.id },
-    include: {
-      owner: { select: { id: true, name: true, email: true } },
-      members: { include: { user: { select: { id: true, name: true, email: true, role: true } } } },
-    },
+    select: { id: true, ownerId: true, members: { select: { id: true, userId: true, projectId: true, role: true } } },
   })
   if (!project) return notFound()
 
@@ -25,7 +22,23 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const isMember = project.members.some((m) => m.userId === user.id)
   if (user.role !== "ADMIN" && !isOwner && !isMember) return forbidden()
 
-  return NextResponse.json({ data: project.members, owner: project.owner })
+  const memberUserIds = Array.from(new Set(project.members.map((m) => m.userId)))
+  const [owner, memberUsers] = await Promise.all([
+    db.user.findUnique({ where: { id: project.ownerId }, select: { id: true, name: true, email: true } }),
+    memberUserIds.length
+      ? db.user.findMany({
+          where: { id: { in: memberUserIds } },
+          select: { id: true, name: true, email: true, role: true },
+        })
+      : Promise.resolve([]),
+  ])
+  const userMap = new Map(memberUsers.map((u) => [u.id, u]))
+  const members = project.members.flatMap((m) => {
+    const u = userMap.get(m.userId)
+    return u ? [{ ...m, user: u }] : []
+  })
+
+  return NextResponse.json({ data: members, owner })
 }
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {

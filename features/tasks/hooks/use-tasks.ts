@@ -91,6 +91,21 @@ export function useDeleteTask() {
   })
 }
 
+// Mô phỏng đúng side-effect của API transition để card cập nhật tức thì.
+function applyOptimisticTransition(t: TaskItem, to: string, reason?: string): TaskItem {
+  const next: TaskItem = { ...t, status: to as TaskItem["status"] }
+  if (to === "PENDING_ACCEPTANCE") { next.pendingApproval = false; next.reviewNote = null }
+  else if (to === "DONE") { next.pendingApproval = false; next.isDraft = false }
+  else if (to === "IN_PROGRESS") { next.pendingApproval = false }
+  else if (to === "REJECTED") { next.pendingApproval = false; next.reviewNote = reason ?? null }
+  else if (to === "TODO") {
+    next.pendingApproval = false
+    if (t.status === "PENDING_ACCEPTANCE") next.reviewNote = reason ?? null
+    else if (t.status === "REJECTED") next.reviewNote = null
+  }
+  return next
+}
+
 export function useTransitionTask() {
   const qc = useQueryClient()
   return useMutation({
@@ -100,13 +115,33 @@ export function useTransitionTask() {
       if (!res.ok) throw json
       return json as { data: TaskItem }
     },
+    // Ghi cache ngay khi xác nhận: card nhảy sang cột đích lập tức, API/history vẫn chạy nền.
+    onMutate: async ({ id, status, reason }) => {
+      await qc.cancelQueries({ queryKey: ["tasks"] })
+      const snapshot = qc.getQueriesData({ queryKey: ["tasks"] })
+      qc.setQueriesData({ queryKey: ["tasks"] }, (prev: unknown) => {
+        if (Array.isArray((prev as TasksResponse)?.data)) {
+          const list = prev as TasksResponse
+          return { ...list, data: list.data.map((t) => (t.id === id ? applyOptimisticTransition(t, status, reason) : t)) }
+        }
+        if ((prev as { data?: TaskItem })?.data?.id === id) {
+          return { data: applyOptimisticTransition((prev as { data: TaskItem }).data, status, reason) }
+        }
+        return prev
+      })
+      return { snapshot }
+    },
     onSuccess: (_d, v) => {
       toast.success(transitionMessage(v.from ?? "", v.status))
     },
     onSettled: (_d, _e, v) => {
+      // Đối chiếu lại với server (kể cả lịch sử chuyển trạng thái).
       qc.invalidateQueries({ queryKey: ["tasks"] })
       qc.invalidateQueries({ queryKey: ["tasks", v.id] })
     },
-    onError: (e: unknown) => toast.fromError(e, "Không thể chuyển trạng thái"),
+    onError: (e: unknown, _v, ctx) => {
+      ctx?.snapshot.forEach(([key, data]) => qc.setQueryData(key, data))
+      toast.fromError(e, "Không thể chuyển trạng thái")
+    },
   })
 }

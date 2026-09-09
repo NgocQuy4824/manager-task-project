@@ -21,6 +21,7 @@ import { useProjects, useProjectMembers } from "@/features/projects/hooks/use-pr
 import { TaskDialog } from "@/features/tasks/components/task-dialog"
 import { TaskKanban } from "@/features/tasks/components/task-kanban"
 import { InviteMemberDialog } from "@/features/tasks/components/invite-member-dialog"
+import { MembersDialog } from "@/features/tasks/components/members-dialog"
 import type { TaskFilters } from "@/features/tasks/types"
 
 const NONE = "__none__"
@@ -85,6 +86,7 @@ export function TasksPageContent() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [membersOpen, setMembersOpen] = useState(false)
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
@@ -200,9 +202,15 @@ export function TasksPageContent() {
             <Button size="sm" variant={view === "list" ? "secondary" : "ghost"} onClick={() => setView("list")}>Danh sách</Button>
           </div>
           {filters.projectId && (
-            <Badge variant="secondary" title="Số thành viên của project" className="gap-1 font-normal tabular-nums">
-              <Users className="h-3.5 w-3.5" />{memberCount ?? 0} thành viên
-            </Badge>
+            <button
+              type="button"
+              onClick={() => setMembersOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border bg-secondary px-3 py-1 text-xs font-normal tabular-nums text-secondary-foreground transition-colors hover:bg-secondary/80"
+              title="Xem thành viên của project"
+            >
+              <Users className="h-3.5 w-3.5" />
+              {memberCount ?? 0} thành viên
+            </button>
           )}
           <Button variant="outline" className="gap-1.5" disabled={!filters.projectId} title={!filters.projectId ? "Chọn project để mời thành viên" : undefined} onClick={() => filters.projectId && setInviteOpen(true)}><UserPlus className="h-4 w-4" />Mời</Button>
           <Button onClick={() => { setEditingId(null); setDialogOpen(true) }} className="gap-1.5 shadow-soft"><Plus className="h-4 w-4" />Tạo task</Button>
@@ -246,6 +254,13 @@ export function TasksPageContent() {
 
       <TaskDialog open={dialogOpen} onOpenChange={(v) => { setDialogOpen(v); if (!v) setEditingId(null) }} editingId={editingId} defaultProjectId={filters.projectId} />
       <InviteMemberDialog open={inviteOpen} onOpenChange={setInviteOpen} projectId={filters.projectId} projectName={(projectsQ.data?.data ?? []).find((p) => p.id === filters.projectId)?.name} />
+      <MembersDialog
+        open={membersOpen}
+        onOpenChange={setMembersOpen}
+        projectId={filters.projectId}
+        projectName={(projectsQ.data?.data ?? []).find((p) => p.id === filters.projectId)?.name}
+        ownerId={selectedProject?.ownerId}
+      />
       {moveCfg && (
         <ConfirmTransitionDialog
           open={!!pendingMove}
