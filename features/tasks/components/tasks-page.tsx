@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useSession } from "next-auth/react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Plus, Search, UserPlus, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -59,10 +60,12 @@ function moveCopy(from: TaskStatusType, to: TaskStatusType): { title: string; de
     requireReason: false,
   }
   if (from === "PENDING_APPROVAL" && to === "TODO") return { ...base, title: "Duyệt task", description: "Đưa task từ Chờ duyệt sang Cần làm.", confirmLabel: "Xác nhận duyệt" }
-  if (to === "TODO" && from === "PENDING_ACCEPTANCE") return { ...base, title: "Yêu cầu làm lại", description: "Trả task về Cần làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Gửi yêu cầu", requireReason: true }
-  if (to === "REJECTED") return { ...base, title: "Từ chối", description: "Đưa task sang Bị từ chối. Lý do sẽ hiển thị cho người liên quan.", confirmLabel: "Xác nhận từ chối", requireReason: true }
+  if (from === "PENDING_ACCEPTANCE" && to === "IN_PROGRESS") return { ...base, title: "Trả về Đang làm", description: "Trả task về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Gửi yêu cầu", requireReason: true }
+  if (from === "DONE" && to === "IN_PROGRESS") return { ...base, title: "Mở lại Đang làm", description: "Mở lại task từ Hoàn thành về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Xác nhận mở lại", requireReason: true }
+  if (from === "IN_PROGRESS" && to === "TODO") return { ...base, title: "Đưa về Cần làm", description: "Đưa task từ Đang làm trở lại Cần làm.", confirmLabel: "Xác nhận" }
   if (to === "DONE") return { ...base, title: "Nghiệm thu hoàn thành", description: "Chấp nhận và đưa task sang Hoàn thành.", confirmLabel: "Xác nhận hoàn thành" }
   if (to === "PENDING_ACCEPTANCE") return { ...base, title: "Gửi nghiệm thu", description: "Đưa task sang Chờ nghiệm thu để người review xử lý.", confirmLabel: "Xác nhận gửi" }
+  if (from === "REJECTED" && to === "TODO") return { ...base, title: "Làm lại", description: "Đưa task từ Bị từ chối trở lại Cần làm.", confirmLabel: "Xác nhận làm lại" }
   return base
 }
 
@@ -95,7 +98,11 @@ export function TasksPageContent() {
   const { data, isLoading } = useTasks(queryFilters, hasProject)
   const projectsQ = useProjects({ pageSize: 50 })
   const membersQ = useProjectMembers(filters.projectId ?? "")
+  const { data: session } = useSession()
+  const role = (session?.user as { role?: string } | undefined)?.role
+  const currentUserId = (session?.user as { id?: string } | undefined)?.id
   const selectedProject = (projectsQ.data?.data ?? []).find((p) => p.id === filters.projectId)
+  const canInvite = role === "ADMIN" || (!!selectedProject && !!currentUserId && selectedProject.ownerId === currentUserId)
   const memberCount = (() => {
     if (!filters.projectId) return null
     const ids = new Set((membersQ.data?.data ?? []).map((m) => m.userId))
@@ -166,13 +173,53 @@ export function TasksPageContent() {
         <p className="mt-0.5 text-sm text-muted-foreground">Theo dõi, lọc và quản lý tất cả công việc trong workspace.</p>
       </div>
 
-      {/* Toolbar: filters + actions */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex gap-2">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Tìm theo tiêu đề..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && applySearch()} className="w-48 pl-9" />
+      {/* Sticky toolbar: actions + filters, ghim ngay dưới header */}
+      <div className="sticky top-16 z-10 -mx-4 border-y bg-background/95 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              className="gap-1.5 shadow-soft"
+              disabled={!filters.projectId || !canInvite}
+              title={
+                !filters.projectId
+                  ? "Chọn project để mời thành viên"
+                  : !canInvite
+                    ? "Chỉ chủ sở hữu project hoặc Admin hệ thống được mời thành viên"
+                    : undefined
+              }
+              onClick={() => filters.projectId && canInvite && setInviteOpen(true)}
+            >
+              <UserPlus className="h-4 w-4" />
+              Mời
+            </Button>
+            <Button className="gap-1.5 shadow-soft" onClick={() => { setEditingId(null); setDialogOpen(true) }}>
+              <Plus className="h-4 w-4" />
+              Tạo task
+            </Button>
+            {filters.projectId && (
+              <button
+                type="button"
+                onClick={() => setMembersOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border bg-secondary px-3 py-1 text-xs font-medium tabular-nums text-secondary-foreground transition-colors hover:bg-secondary/80"
+                title="Xem thành viên của project"
+              >
+                <Users className="h-3.5 w-3.5" />
+                {memberCount ?? 0} thành viên
+              </button>
+            )}
           </div>
+          <div className="ml-auto flex rounded-md border bg-card p-1 shadow-soft">
+            <Button size="sm" variant={view === "kanban" ? "secondary" : "ghost"} onClick={() => setView("kanban")}>Kanban</Button>
+            <Button size="sm" variant={view === "list" ? "secondary" : "ghost"} onClick={() => setView("list")}>Danh sách</Button>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <div className="flex gap-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="Tìm theo tiêu đề..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && applySearch()} className="w-48 pl-9" />
+            </div>
           <Button variant="outline" onClick={applySearch}>Tìm</Button>
         </div>
         <Select value={filters.projectId ?? ""} onValueChange={(v) => { setFilters((f) => ({ ...f, projectId: v })); setPage(1) }}>
@@ -196,26 +243,8 @@ export function TasksPageContent() {
         {(filters.search || filters.status || filters.priority || filters.projectId) && (
           <Button variant="ghost" size="sm" onClick={() => { setFilters(filters.projectId ? { projectId: filters.projectId } : {}); setSearchInput(""); setPage(1) }}>Xóa lọc</Button>
         )}
-        <div className="ml-auto flex items-center gap-2">
-          <div className="flex rounded-md border bg-card p-1 shadow-soft">
-            <Button size="sm" variant={view === "kanban" ? "secondary" : "ghost"} onClick={() => setView("kanban")}>Kanban</Button>
-            <Button size="sm" variant={view === "list" ? "secondary" : "ghost"} onClick={() => setView("list")}>Danh sách</Button>
-          </div>
-          {filters.projectId && (
-            <button
-              type="button"
-              onClick={() => setMembersOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border bg-secondary px-3 py-1 text-xs font-normal tabular-nums text-secondary-foreground transition-colors hover:bg-secondary/80"
-              title="Xem thành viên của project"
-            >
-              <Users className="h-3.5 w-3.5" />
-              {memberCount ?? 0} thành viên
-            </button>
-          )}
-          <Button variant="outline" className="gap-1.5" disabled={!filters.projectId} title={!filters.projectId ? "Chọn project để mời thành viên" : undefined} onClick={() => filters.projectId && setInviteOpen(true)}><UserPlus className="h-4 w-4" />Mời</Button>
-          <Button onClick={() => { setEditingId(null); setDialogOpen(true) }} className="gap-1.5 shadow-soft"><Plus className="h-4 w-4" />Tạo task</Button>
-        </div>
       </div>
+    </div>
 
       {!hasProject ? (
         <div className="rounded-xl border border-dashed bg-card px-6 py-14 text-center">

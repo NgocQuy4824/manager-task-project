@@ -46,10 +46,11 @@ type MoveConfig = {
 const MOVES: Record<string, MoveConfig> = {
   approveStart: { title: "Duyệt task", description: "Đưa task từ Chờ duyệt sang Cần làm để bắt đầu thực hiện.", confirmLabel: "Xác nhận duyệt" },
   startWork: { title: "Bắt đầu làm", description: "Đưa task từ Cần làm sang Đang làm.", confirmLabel: "Xác nhận bắt đầu" },
+  backToTodo: { title: "Đưa về Cần làm", description: "Đưa task từ Đang làm trở lại Cần làm.", confirmLabel: "Xác nhận" },
   submitReview: { title: "Gửi nghiệm thu", description: "Đưa task từ Đang làm sang Chờ nghiệm thu để người review xử lý.", confirmLabel: "Xác nhận gửi" },
   accept: { title: "Nghiệm thu hoàn thành", description: "Chấp nhận và đưa task sang Hoàn thành.", confirmLabel: "Xác nhận hoàn thành" },
-  rework: { title: "Yêu cầu làm lại", description: "Trả task về Cần làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Gửi yêu cầu", requireReason: true, reasonLabel: "Lý do yêu cầu làm lại *", reasonPlaceholder: "Giải thích vì sao cần làm lại..." },
-  reject: { title: "Từ chối", description: "Đưa task từ Hoàn thành sang Bị từ chối. Lý do sẽ hiển thị cho người liên quan.", confirmLabel: "Xác nhận từ chối", requireReason: true, reasonLabel: "Lý do từ chối *", reasonPlaceholder: "Giải thích vì sao bị từ chối..." },
+  rework: { title: "Trả về Đang làm", description: "Trả task từ Chờ nghiệm thu về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Gửi yêu cầu", requireReason: true, reasonLabel: "Lý do trả về *", reasonPlaceholder: "Giải thích vì sao cần làm lại..." },
+  reopen: { title: "Mở lại Đang làm", description: "Mở lại task từ Hoàn thành về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Xác nhận mở lại", requireReason: true, reasonLabel: "Lý do mở lại *", reasonPlaceholder: "Giải thích vì sao cần mở lại..." },
   redo: { title: "Làm lại", description: "Đưa task từ Bị từ chối trở lại Cần làm.", confirmLabel: "Xác nhận làm lại" },
 }
 
@@ -84,14 +85,15 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
   // Nút hành động theo ma trận chuyển trạng thái tuyến tính
   const canApproveStart = (isAdmin || isManager || isCreator || isAssignee) && t.status === "PENDING_APPROVAL"
   const canStartWork = (isAdmin || isExecutor || isAssignee) && t.status === "TODO"
+  const canBackToTodo = (isAdmin || isExecutor || isAssignee || isCreator || isManager) && t.status === "IN_PROGRESS"
   const canSubmitReview = (isAdmin || isExecutor || isAssignee || isCreator) && t.status === "IN_PROGRESS"
   const canAccept = isReviewer && t.status === "PENDING_ACCEPTANCE"
   const canRework = isReviewer && t.status === "PENDING_ACCEPTANCE"
-  const canRejectDone = isReviewer && t.status === "DONE"
+  const canReopen = isReviewer && t.status === "DONE"
   const canRedo = (isRelated || isAdmin) && t.status === "REJECTED"
 
   const showAwaitingBanner = t.status === "PENDING_ACCEPTANCE"
-  const showReviewNote = (t.status === "TODO" || t.status === "REJECTED") && !!t.reviewNote
+  const showReviewNote = (t.status === "IN_PROGRESS" || t.status === "REJECTED") && !!t.reviewNote
 
   function openMove(key: string, status: TaskStatusType) {
     setReason("")
@@ -145,7 +147,7 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
       {showAwaitingBanner && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
           <span className="font-semibold">Đang chờ nghiệm thu.</span> Task này đã được gửi để review.
-          {isReviewer && <span className="ml-2">Bạn có thể nghiệm thu hoàn thành hoặc yêu cầu làm lại bên dưới.</span>}
+          {isReviewer && <span className="ml-2">Bạn có thể nghiệm thu hoàn thành hoặc trả về Đang làm bên dưới.</span>}
         </div>
       )}
 
@@ -157,6 +159,28 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
           </CardContent>
         </Card>
       )}
+
+      <Card className="border shadow-soft">
+        <CardHeader><CardTitle className="text-base font-semibold">Hành động</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          {actionErr && <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">{actionErr}</p>}
+          <div className="flex flex-wrap gap-2">
+            {canApproveStart && <Button onClick={() => openMove("approveStart", "TODO")} disabled={transMut.isPending}>Duyệt để bắt đầu</Button>}
+            {canStartWork && <Button onClick={() => openMove("startWork", "IN_PROGRESS")} disabled={transMut.isPending}>Bắt đầu làm</Button>}
+            {canBackToTodo && <Button variant="outline" onClick={() => openMove("backToTodo", "TODO")} disabled={transMut.isPending}>Đưa về Cần làm</Button>}
+            {canSubmitReview && <Button onClick={() => openMove("submitReview", "PENDING_ACCEPTANCE")} disabled={transMut.isPending}>Gửi nghiệm thu</Button>}
+            {canAccept && <Button onClick={() => openMove("accept", "DONE")} disabled={transMut.isPending}>Nghiệm thu hoàn thành</Button>}
+            {canRework && <Button variant="outline" onClick={() => openMove("rework", "IN_PROGRESS")} disabled={transMut.isPending}>Trả về Đang làm</Button>}
+            {canReopen && <Button variant="outline" onClick={() => openMove("reopen", "IN_PROGRESS")} disabled={transMut.isPending}>Mở lại Đang làm</Button>}
+            {canRedo && <Button variant="outline" onClick={() => openMove("redo", "TODO")} disabled={transMut.isPending}>Làm lại</Button>}
+            {!(canApproveStart || canStartWork || canBackToTodo || canSubmitReview || canAccept || canRework || canReopen || canRedo) && (
+              <span className="text-sm text-muted-foreground">
+                {isRelated || isAdmin ? "Không có hành động nào khả dụng cho trạng thái hiện tại." : "Bạn không có quyền thao tác task này."}
+              </span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="overflow-hidden border shadow-soft">
         <CardHeader className="pb-3">
@@ -206,27 +230,6 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
               <Clock3 className="h-4 w-4 shrink-0 opacity-60" />
               <span className="truncate">Tạo lúc: <span className="font-medium text-foreground">{new Date(t.createdAt).toLocaleString("vi-VN")}</span></span>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border shadow-soft">
-        <CardHeader><CardTitle className="text-base font-semibold">Hành động</CardTitle></CardHeader>
-        <CardContent className="space-y-3">
-          {actionErr && <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">{actionErr}</p>}
-          <div className="flex flex-wrap gap-2">
-            {canApproveStart && <Button onClick={() => openMove("approveStart", "TODO")} disabled={transMut.isPending}>Duyệt để bắt đầu</Button>}
-            {canStartWork && <Button onClick={() => openMove("startWork", "IN_PROGRESS")} disabled={transMut.isPending}>Bắt đầu làm</Button>}
-            {canSubmitReview && <Button onClick={() => openMove("submitReview", "PENDING_ACCEPTANCE")} disabled={transMut.isPending}>Gửi nghiệm thu</Button>}
-            {canAccept && <Button onClick={() => openMove("accept", "DONE")} disabled={transMut.isPending}>Nghiệm thu hoàn thành</Button>}
-            {canRework && <Button variant="outline" onClick={() => openMove("rework", "TODO")} disabled={transMut.isPending}>Yêu cầu làm lại</Button>}
-            {canRejectDone && <Button variant="outline" className="text-destructive" onClick={() => openMove("reject", "REJECTED")} disabled={transMut.isPending}>Từ chối</Button>}
-            {canRedo && <Button variant="outline" onClick={() => openMove("redo", "TODO")} disabled={transMut.isPending}>Làm lại</Button>}
-            {!(canApproveStart || canStartWork || canSubmitReview || canAccept || canRework || canRejectDone || canRedo) && (
-              <span className="text-sm text-muted-foreground">
-                {isRelated || isAdmin ? "Không có hành động nào khả dụng cho trạng thái hiện tại." : "Bạn không có quyền thao tác task này."}
-              </span>
-            )}
           </div>
         </CardContent>
       </Card>

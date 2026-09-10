@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useProject, useProjectMembers, useAddMember, useRemoveMember } from "@/features/projects/hooks/use-projects"
 import { useUsers } from "@/features/users/hooks/use-users"
 import { ProjectAvatar } from "@/features/projects/components/project-avatar"
+import { ROLES, ROLE_LABELS, type RoleType } from "@/lib/constants"
 
 function memberInitial(name: string | null | undefined, email: string): string {
   const src = (name ?? email ?? "?").trim()
@@ -31,15 +32,23 @@ export function ProjectDetailContent({ projectId }: { projectId: string }) {
   const addMut = useAddMember(projectId)
   const removeMut = useRemoveMember(projectId)
   const [selectedUserId, setSelectedUserId] = useState("")
+  const [selectedRole, setSelectedRole] = useState<RoleType>("MEMBER")
   const [err, setErr] = useState<string | null>(null)
   const [pendingRemoveUserId, setPendingRemoveUserId] = useState<string | null>(null)
+
+  // Chỉ chủ sở hữu project / ADMIN toàn cục mới được mời thành viên.
+  const isOwnerOrGlobalAdmin = role === "ADMIN" || (!!currentUserId && data?.data?.ownerId === currentUserId)
+  const canAddMembers = isOwnerOrGlobalAdmin
+  const canRemoveMembers = isOwnerOrGlobalAdmin
+  const effectiveRole: RoleType = selectedRole
 
   async function onAdd() {
     if (!selectedUserId) return
     setErr(null)
     try {
-      await addMut.mutateAsync({ userId: selectedUserId })
+      await addMut.mutateAsync({ userId: selectedUserId, role: effectiveRole })
       setSelectedUserId("")
+      setSelectedRole("MEMBER")
     } catch (e: unknown) {
       setErr((e as { error?: string })?.error ?? (e as Error)?.message ?? "Lỗi")
     }
@@ -55,7 +64,6 @@ export function ProjectDetailContent({ projectId }: { projectId: string }) {
   if (!data?.data) return <p>Không tìm thấy project.</p>
   const p = data.data
   const ownerLabel = p.owner?.name ?? p.owner?.email ?? "Không rõ"
-  const canManageMembers = role === "ADMIN" || (!!currentUserId && p.ownerId === currentUserId)
 
   return (
     <div className="space-y-6">
@@ -102,7 +110,7 @@ export function ProjectDetailContent({ projectId }: { projectId: string }) {
         </CardHeader>
         <CardContent className="space-y-4">
           {err && <p className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-sm font-medium text-destructive">{err}</p>}
-          {canManageMembers && (
+          {canAddMembers && (
             <div className="flex flex-wrap gap-2 rounded-xl border border-dashed bg-muted/20 p-3">
               <Select value={selectedUserId} onValueChange={setSelectedUserId}>
                 <SelectTrigger className="max-w-xs flex-1">
@@ -112,6 +120,18 @@ export function ProjectDetailContent({ projectId }: { projectId: string }) {
                   {(usersQ.data?.data ?? []).map((u) => (
                     <SelectItem key={u.id} value={u.id}>
                       {u.name ? `${u.name} (${u.email})` : u.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as RoleType)} disabled={!isOwnerOrGlobalAdmin}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLES.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {ROLE_LABELS[r]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -157,10 +177,10 @@ export function ProjectDetailContent({ projectId }: { projectId: string }) {
                     <span className="truncate text-sm">{m.user.name ?? m.user.email}</span>
                     <Badge variant="secondary" className="gap-1">
                       <ShieldCheck className="h-3 w-3" />
-                      {m.role}
+                      {ROLE_LABELS[m.role as RoleType] ?? m.role}
                     </Badge>
                   </div>
-                  {canManageMembers && (
+                  {canRemoveMembers && (
                     <Button
                       size="sm"
                       variant="ghost"

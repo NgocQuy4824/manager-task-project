@@ -8,8 +8,8 @@ import type { TasksResponse, TaskItem, TaskFilters } from "@/features/tasks/type
 
 function transitionMessage(from: string, to: string): string {
   if (from === "PENDING_APPROVAL" && to === "TODO") return "Đã duyệt task"
-  if (to === "TODO" && from === "PENDING_ACCEPTANCE") return "Đã yêu cầu làm lại"
-  if (to === "REJECTED") return "Đã từ chối task"
+  if (to === "IN_PROGRESS" && from === "PENDING_ACCEPTANCE") return "Đã trả về Đang làm"
+  if (to === "IN_PROGRESS" && from === "DONE") return "Đã mở lại task"
   if (to === "DONE") return "Đã nghiệm thu hoàn thành"
   if (to === "PENDING_ACCEPTANCE") return "Đã gửi nghiệm thu"
   if (to === "IN_PROGRESS") return "Đã bắt đầu làm"
@@ -96,12 +96,13 @@ function applyOptimisticTransition(t: TaskItem, to: string, reason?: string): Ta
   const next: TaskItem = { ...t, status: to as TaskItem["status"] }
   if (to === "PENDING_ACCEPTANCE") { next.pendingApproval = false; next.reviewNote = null }
   else if (to === "DONE") { next.pendingApproval = false; next.isDraft = false }
-  else if (to === "IN_PROGRESS") { next.pendingApproval = false }
-  else if (to === "REJECTED") { next.pendingApproval = false; next.reviewNote = reason ?? null }
   else if (to === "TODO") {
     next.pendingApproval = false
-    if (t.status === "PENDING_ACCEPTANCE") next.reviewNote = reason ?? null
-    else if (t.status === "REJECTED") next.reviewNote = null
+    if (t.status === "REJECTED") next.reviewNote = null
+  } else if (to === "IN_PROGRESS") {
+    next.pendingApproval = false; next.isDraft = false
+    if (t.status === "PENDING_ACCEPTANCE" || t.status === "DONE") next.reviewNote = reason ?? null
+    else next.reviewNote = null
   }
   return next
 }

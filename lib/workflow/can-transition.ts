@@ -13,14 +13,14 @@ type TransitionUser = {
 }
 
 // Luồng tuyến tính: PENDING_APPROVAL → TODO → IN_PROGRESS → PENDING_ACCEPTANCE → DONE
-// Nhánh phụ: PENDING_ACCEPTANCE → TODO (yêu cầu làm lại), DONE → REJECTED (từ chối), REJECTED → TODO (làm lại)
-// Không có đường nào trỏ về PENDING_APPROVAL (chỉ là trạng thái khởi điểm).
+// Nhánh trả về: IN_PROGRESS → TODO, PENDING_ACCEPTANCE → IN_PROGRESS, DONE → IN_PROGRESS
+// Làm lại: REJECTED → TODO. Không có đường nào trỏ về PENDING_APPROVAL (chỉ là trạng thái khởi điểm).
 export const ALLOWED_TRANSITIONS: Record<TaskStatusType, TaskStatusType[]> = {
   PENDING_APPROVAL: ["TODO"],
   TODO: ["IN_PROGRESS"],
-  IN_PROGRESS: ["PENDING_ACCEPTANCE"],
-  PENDING_ACCEPTANCE: ["DONE", "TODO"],
-  DONE: ["REJECTED"],
+  IN_PROGRESS: ["PENDING_ACCEPTANCE", "TODO"],
+  PENDING_ACCEPTANCE: ["DONE", "IN_PROGRESS"],
+  DONE: ["IN_PROGRESS"],
   REJECTED: ["TODO"],
 }
 
@@ -51,15 +51,19 @@ export function canTransition(
     case "TODO":
       if (task.status === "PENDING_APPROVAL")
         return isCreator || isAssignee || isManager
-      // Yêu cầu làm lại (PENDING_ACCEPTANCE → TODO): người review
-      if (task.status === "PENDING_ACCEPTANCE")
-        return isCreator || isManager
+      // Trả về backlog (IN_PROGRESS → TODO): người tạo / người được giao / người làm / MANAGER
+      if (task.status === "IN_PROGRESS")
+        return isCreator || isAssignee || isExecutor || isManager
       // Làm lại (REJECTED → TODO): bất kỳ người liên quan
       return isCreator || isAssignee || isExecutor
 
     // Bắt đầu làm (TODO → IN_PROGRESS): người làm
     case "IN_PROGRESS":
-      return isExecutor || isAssignee
+      if (task.status === "TODO") return isExecutor || isAssignee
+      // Trả về làm lại (PENDING_ACCEPTANCE → IN_PROGRESS): người review
+      if (task.status === "PENDING_ACCEPTANCE") return isCreator || isManager
+      // Mở lại sau hoàn thành (DONE → IN_PROGRESS): người review
+      return isCreator || isManager
 
     // Gửi nghiệm thu (IN_PROGRESS → PENDING_ACCEPTANCE): người làm / người tạo
     case "PENDING_ACCEPTANCE":
@@ -68,10 +72,6 @@ export function canTransition(
     // Nghiệm thu hoàn thành (PENDING_ACCEPTANCE → DONE): người review
     case "DONE":
       return isCreator || isManager
-
-    // Từ chối sau hoàn thành (DONE → REJECTED): người liên quan / MANAGER
-    case "REJECTED":
-      return isCreator || isAssignee || isManager
   }
 
   return false

@@ -60,7 +60,7 @@ function SortableCard({ task, onRequestMove, onEdit, onDelete }: {
   const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
 
   const overdue = isOverdue(task)
-  const needsRework = task.status === "TODO" && !!task.reviewNote
+  const needsRework = task.status === "IN_PROGRESS" && !!task.reviewNote
 
   return (
     <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className="w-full min-w-0 shrink-0 cursor-grab border bg-card shadow-soft transition-shadow hover:shadow-soft-lg active:cursor-grabbing">
