@@ -10,15 +10,29 @@ import { HydrateClient } from "@/components/hydrate-client"
 
 export default async function UsersPage() {
   const session = await getServerSession(authOptions)
-  if (!session?.user) redirect("/login")
-  if (session.user.role !== "ADMIN") redirect("/tasks")
+
+  if (!session?.user) {
+    redirect("/login")
+  }
+
+  const currentUserRole = session.user.role as "ADMIN" | "MANAGER" | "MEMBER"
 
   const qc = getQueryClient()
-  await qc.prefetchQuery({ queryKey: ["users", { page: 1, pageSize: 20 }], queryFn: () => loadUsers({ page: 1, pageSize: 20 }) })
+
+  await qc.prefetchQuery({
+    queryKey: ["users", { page: 1, pageSize: 20 }],
+    queryFn: () =>
+      loadUsers({
+        page: 1,
+        pageSize: 20,
+      }),
+  })
 
   return (
     <HydrateClient dehydratedState={dehydrate(qc)}>
-      <UsersPageContent />
+      <UsersPageContent
+        currentUserRole={currentUserRole}
+      />
     </HydrateClient>
   )
 }
