@@ -1,9 +1,20 @@
+export { createUserSchema, updateUserSchema } from "@/lib/validations/user"
+
+export type {
+  CreateUserInput,
+  UpdateUserInput,
+} from "@/lib/validations/user"
+
+export type UserRole = "ADMIN" | "MANAGER" | "MEMBER"
+
 export type UserListItem = {
   id: string
   email: string
   name: string | null
-  role: string
+  role: UserRole
+  isActive: boolean
   createdAt: string
+  updatedAt?: string
   image?: string | null
 }
 
@@ -11,7 +22,8 @@ export type UserDetail = {
   id: string
   email: string
   name: string | null
-  role: string
+  role: UserRole
+  isActive: boolean
   createdAt: string
   updatedAt: string
   image?: string | null
