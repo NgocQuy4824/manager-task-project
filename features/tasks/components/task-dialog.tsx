@@ -11,9 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useCreateTask, useUpdateTask, useTask } from "@/features/tasks/hooks/use-tasks"
-import { useProjects } from "@/features/projects/hooks/use-projects"
-import { useUsers } from "@/features/users/hooks/use-users"
-import { TASK_STATUS_LABELS, KANBAN_STATUSES } from "@/lib/constants"
+import { useProjects, useProjectMembers } from "@/features/projects/hooks/use-projects"
+import { TASK_STATUS_LABELS, KANBAN_STATUSES, ROLE_LABELS, type RoleType } from "@/lib/constants"
 import type { TaskItem } from "@/features/tasks/types"
 
 // Trường status chỉ dùng khi TẠO task (trạng thái khởi điểm). Khi SỬA thì ẩn đi:
@@ -38,7 +37,6 @@ export function TaskDialog({ open, onOpenChange, editingId, defaultProjectId }: 
   const createMut = useCreateTask()
   const updateMut = useUpdateTask()
   const projectsQ = useProjects({ pageSize: 50 })
-  const usersQ = useUsers({ pageSize: 100 })
   const [err, setErr] = useState<string | null>(null)
 
   const form = useForm<FormValues>({
@@ -84,6 +82,15 @@ export function TaskDialog({ open, onOpenChange, editingId, defaultProjectId }: 
   const pending = createMut.isPending || updateMut.isPending
   const NONE = "__none__"
   const compact = "h-9 text-sm"
+  const watchedProjectId = form.watch("projectId")
+  const membersQ = useProjectMembers(watchedProjectId ?? "")
+  const memberOptions = membersQ.data?.data ?? []
+  const hasProject = !!watchedProjectId
+  function memberLabel(m: { role: string; user: { name: string | null; email: string } }): string {
+    const name = m.user.name ? `${m.user.name} (${m.user.email})` : m.user.email
+    const rl = (ROLE_LABELS[m.role as RoleType] ?? m.role) as string
+    return `${name} — ${rl}`
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -136,17 +143,29 @@ export function TaskDialog({ open, onOpenChange, editingId, defaultProjectId }: 
               )} />
               <FormField control={form.control} name="assigneeId" render={({ field }) => (
                 <FormItem><FormLabel>Người được giao</FormLabel>
-                  <Select value={field.value ?? NONE} onValueChange={(v) => field.onChange(v === NONE ? "" : v)}>
-                    <FormControl><SelectTrigger className={compact}><SelectValue placeholder="—" /></SelectTrigger></FormControl>
-                    <SelectContent><SelectItem value={NONE}>— Không chọn —</SelectItem>{(usersQ.data?.data ?? []).map((u) => <SelectItem key={u.id} value={u.id}>{u.name ? `${u.name} (${u.email})` : u.email}</SelectItem>)}</SelectContent>
+                  <Select value={field.value ?? NONE} onValueChange={(v) => field.onChange(v === NONE ? "" : v)} disabled={!hasProject}>
+                    <FormControl><SelectTrigger className={compact}><SelectValue placeholder={hasProject ? "—" : "Chọn project trước"} /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value={NONE}>— Không chọn —</SelectItem>
+                      {hasProject && memberOptions.length === 0 && !membersQ.isLoading && (
+                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">Chưa có thành viên nào trong project này.</div>
+                      )}
+                      {memberOptions.map((m) => <SelectItem key={m.id} value={m.userId}>{memberLabel(m)}</SelectItem>)}
+                    </SelectContent>
                   </Select><FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="executorId" render={({ field }) => (
                 <FormItem><FormLabel>Người thực hiện</FormLabel>
-                  <Select value={field.value ?? NONE} onValueChange={(v) => field.onChange(v === NONE ? "" : v)}>
-                    <FormControl><SelectTrigger className={compact}><SelectValue placeholder="—" /></SelectTrigger></FormControl>
-                    <SelectContent><SelectItem value={NONE}>— Không chọn —</SelectItem>{(usersQ.data?.data ?? []).map((u) => <SelectItem key={u.id} value={u.id}>{u.name ? `${u.name} (${u.email})` : u.email}</SelectItem>)}</SelectContent>
+                  <Select value={field.value ?? NONE} onValueChange={(v) => field.onChange(v === NONE ? "" : v)} disabled={!hasProject}>
+                    <FormControl><SelectTrigger className={compact}><SelectValue placeholder={hasProject ? "—" : "Chọn project trước"} /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value={NONE}>— Không chọn —</SelectItem>
+                      {hasProject && memberOptions.length === 0 && !membersQ.isLoading && (
+                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">Chưa có thành viên nào trong project này.</div>
+                      )}
+                      {memberOptions.map((m) => <SelectItem key={m.id} value={m.userId}>{memberLabel(m)}</SelectItem>)}
+                    </SelectContent>
                   </Select><FormMessage />
                 </FormItem>
               )} />

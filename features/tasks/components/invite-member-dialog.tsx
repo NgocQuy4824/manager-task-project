@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTasks } from "@/features/tasks/hooks/use-tasks"
 import { useProjects, useProjectMembers, useAddMember } from "@/features/projects/hooks/use-projects"
 import { useUsers } from "@/features/users/hooks/use-users"
+import { ROLES, ROLE_LABELS, type RoleType } from "@/lib/constants"
 
 export function InviteMemberDialog({
   open,
@@ -36,6 +37,7 @@ export function InviteMemberDialog({
   const [selectedProjectId, setSelectedProjectId] = useState("")
   const effectiveProjectId = projectId ?? selectedProjectId
   const [selectedUserId, setSelectedUserId] = useState("")
+  const [selectedRole, setSelectedRole] = useState<RoleType>("MEMBER")
   const [err, setErr] = useState<string | null>(null)
 
   // Khi parent truyền projectId cố định, đồng bộ 1 lần
@@ -82,11 +84,14 @@ export function InviteMemberDialog({
     [usersQ.data, memberUserIds],
   )
 
+  const canGrantPrivilegedRole = role === "ADMIN" || (!!selectedProject && selectedProject.ownerId === currentUserId)
+  const effectiveRoleToSend: RoleType = canGrantPrivilegedRole ? selectedRole : "MEMBER"
+
   async function handleInvite() {
     if (!effectiveProjectId || !selectedUserId) return
     setErr(null)
     try {
-      await addMut.mutateAsync({ userId: selectedUserId })
+      await addMut.mutateAsync({ userId: selectedUserId, role: effectiveRoleToSend })
       handleOpenChange(false)
     } catch (e: unknown) {
       setErr((e as { error?: string })?.error ?? (e as Error)?.message ?? "Lỗi mời thành viên")
@@ -98,6 +103,7 @@ export function InviteMemberDialog({
     if (!v) {
       if (!projectId) setSelectedProjectId("")
       setSelectedUserId("")
+      setSelectedRole("MEMBER")
       setErr(null)
     }
   }
@@ -162,6 +168,22 @@ export function InviteMemberDialog({
             {effectiveProjectId && candidates.length === 0 && !usersQ.isLoading && !membersQ.isLoading && (
               <p className="text-xs text-muted-foreground">Không còn người nào có thể mời vào project này.</p>
             )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Vai trò trong project</Label>
+            <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as RoleType)} disabled={!canGrantPrivilegedRole}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROLES.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {ROLE_LABELS[r]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {err && <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">{err}</p>}

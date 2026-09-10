@@ -45,11 +45,16 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const user = await getSession()
   if (!user) return unauthorized()
 
-  const project = await db.project.findUnique({ where: { id: params.id } })
+  const project = await db.project.findUnique({
+    where: { id: params.id },
+    select: { id: true, ownerId: true, members: { select: { userId: true, role: true } } },
+  })
   if (!project) return notFound()
 
   const isOwner = project.ownerId === user.id
-  if (user.role !== "ADMIN" && !isOwner) return forbidden("Chỉ owner/Admin được thêm member")
+  const canGrantPrivilegedRole = user.role === "ADMIN" || isOwner
+  const canAddMember = canGrantPrivilegedRole
+  if (!canAddMember) return forbidden("Chỉ chủ sở hữu project (hoặc Admin hệ thống) được mời thành viên")
 
   const body = await req.json().catch(() => ({}))
   const parsed = addMemberSchema.safeParse(body)
@@ -79,7 +84,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   if (!project) return notFound()
 
   const isOwner = project.ownerId === user.id
-  if (user.role !== "ADMIN" && !isOwner) return forbidden()
+  if (user.role !== "ADMIN" && !isOwner) return forbidden("Chỉ owner/Admin được xóa member")
 
   const { searchParams } = new URL(req.url)
   const userId = searchParams.get("userId")

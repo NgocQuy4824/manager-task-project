@@ -17,13 +17,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const task = await db.task.findUnique({ where: { id: params.id } })
   if (!task) return notFound()
 
-  // Từ chối (DONE → REJECTED): bắt buộc có lý do
-  if (targetStatus === "REJECTED" && !reasonRaw) {
-    return NextResponse.json({ error: "Vui lòng nhập lý do khi từ chối task" }, { status: 422 })
-  }
-  // Yêu cầu làm lại (PENDING_ACCEPTANCE → TODO): bắt buộc có lý do
-  if (task.status === "PENDING_ACCEPTANCE" && targetStatus === "TODO" && !reasonRaw) {
-    return NextResponse.json({ error: "Vui lòng nhập lý do khi yêu cầu làm lại" }, { status: 422 })
+  // Trả về làm lại (PENDING_ACCEPTANCE / DONE → IN_PROGRESS): bắt buộc có lý do
+  if (targetStatus === "IN_PROGRESS" && (task.status === "PENDING_ACCEPTANCE" || task.status === "DONE") && !reasonRaw) {
+    return NextResponse.json({ error: "Vui lòng nhập lý do khi trả task về làm lại" }, { status: 422 })
   }
 
   const allowed = canTransition(
@@ -54,21 +50,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
   if (targetStatus === "TODO") {
     data.pendingApproval = false
-    if (task.status === "PENDING_ACCEPTANCE") {
-      // Yêu cầu làm lại: lưu lý do để user thấy trên cột Cần làm
-      data.reviewNote = reasonRaw
-    } else if (task.status === "REJECTED") {
+    if (task.status === "REJECTED") {
       // Làm lại từ trạng thái bị từ chối: xóa lý do cũ
       data.reviewNote = null
     }
   }
   if (targetStatus === "IN_PROGRESS") {
     data.pendingApproval = false
-  }
-  if (targetStatus === "REJECTED") {
-    // Từ chối: lưu lý do để hiển thị trên chi tiết
-    data.pendingApproval = false
-    data.reviewNote = reasonRaw
+    data.isDraft = false
+    if (task.status === "PENDING_ACCEPTANCE" || task.status === "DONE") {
+      // Trả về làm lại: lưu lý do để người thực hiện thấy trên cột Đang làm
+      data.reviewNote = reasonRaw
+    } else {
+      data.reviewNote = null
+    }
   }
 
   const updated = await db.task.update({ where: { id: params.id }, data: data as never })
