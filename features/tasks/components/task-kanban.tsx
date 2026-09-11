@@ -56,11 +56,12 @@ function SortableCard({ task, onRequestMove, onEdit, onDelete }: {
   onEdit: (id: string) => void
   onDelete: (id: string) => void
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { status: task.status } })
-  const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
-
   const overdue = isOverdue(task)
   const needsRework = task.status === "IN_PROGRESS" && !!task.reviewNote
+  const frozen = task.assignee?.isActive === false || task.executor?.isActive === false
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { status: task.status }, disabled: frozen })
+  const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
 
   return (
     <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className="w-full min-w-0 shrink-0 cursor-grab border bg-card shadow-soft transition-shadow hover:shadow-soft-lg active:cursor-grabbing">
@@ -87,18 +88,21 @@ function SortableCard({ task, onRequestMove, onEdit, onDelete }: {
             <div className="flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
               <User className="h-3.5 w-3.5 shrink-0 opacity-60" />
               <span className="truncate">Giao: {task.assignee.name ?? task.assignee.email}</span>
+              {task.assignee.isActive === false && <Badge variant="destructive" className="shrink-0 text-[10px]">Đã vô hiệu hóa</Badge>}
             </div>
           )}
           {task.executor && (
             <div className="flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
               <UserCog className="h-3.5 w-3.5 shrink-0 opacity-60" />
               <span className="truncate">TH: {task.executor.name ?? task.executor.email}</span>
+              {task.executor.isActive === false && <Badge variant="destructive" className="shrink-0 text-[10px]">Đã vô hiệu hóa</Badge>}
             </div>
           )}
+          {frozen && <Badge variant="outline" className="border-amber-200 bg-amber-50 text-[10px] text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">Đóng băng</Badge>}
         </div>
         <div className="flex flex-wrap gap-1.5 pt-1" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-          {task.status === "PENDING_APPROVAL" && <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => onRequestMove(task.id, task.status as TaskStatusType, "TODO")}>Duyệt</Button>}
-          {task.status === "PENDING_ACCEPTANCE" && <Button size="sm" variant="secondary" className="h-7 text-xs" onClick={() => onRequestMove(task.id, task.status as TaskStatusType, "DONE")}>Nghiệm thu</Button>}
+          {task.status === "PENDING_APPROVAL" && <Button size="sm" variant="secondary" className="h-7 text-xs" disabled={frozen} onClick={() => onRequestMove(task.id, task.status as TaskStatusType, "TODO")}>Duyệt</Button>}
+          {task.status === "PENDING_ACCEPTANCE" && <Button size="sm" variant="secondary" className="h-7 text-xs" disabled={frozen} onClick={() => onRequestMove(task.id, task.status as TaskStatusType, "DONE")}>Nghiệm thu</Button>}
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onEdit(task.id)}>Sửa</Button>
           <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => onDelete(task.id)}>Xóa</Button>
         </div>

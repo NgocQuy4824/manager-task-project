@@ -14,12 +14,13 @@ type TransitionUser = {
 
 // Luồng tuyến tính: PENDING_APPROVAL → TODO → IN_PROGRESS → PENDING_ACCEPTANCE → DONE
 // Nhánh trả về: IN_PROGRESS → TODO, PENDING_ACCEPTANCE → IN_PROGRESS, DONE → IN_PROGRESS
+// Từ chối (REJECTED): chỉ ở 2 cổng phê duyệt — PENDING_APPROVAL → REJECTED, PENDING_ACCEPTANCE → REJECTED
 // Làm lại: REJECTED → TODO. Không có đường nào trỏ về PENDING_APPROVAL (chỉ là trạng thái khởi điểm).
 export const ALLOWED_TRANSITIONS: Record<TaskStatusType, TaskStatusType[]> = {
-  PENDING_APPROVAL: ["TODO"],
+  PENDING_APPROVAL: ["TODO", "REJECTED"],
   TODO: ["IN_PROGRESS"],
   IN_PROGRESS: ["PENDING_ACCEPTANCE", "TODO"],
-  PENDING_ACCEPTANCE: ["DONE", "IN_PROGRESS"],
+  PENDING_ACCEPTANCE: ["DONE", "IN_PROGRESS", "REJECTED"],
   DONE: ["IN_PROGRESS"],
   REJECTED: ["TODO"],
 }
@@ -72,6 +73,14 @@ export function canTransition(
     // Nghiệm thu hoàn thành (PENDING_ACCEPTANCE → DONE): người review
     case "DONE":
       return isCreator || isManager
+
+    // Từ chối — chỉ ở 2 cổng phê duyệt:
+    //  - PENDING_APPROVAL → REJECTED: người duyệt (creator / assignee / MANAGER)
+    //  - PENDING_ACCEPTANCE → REJECTED: người nghiệm thu (creator / MANAGER)
+    case "REJECTED":
+      if (task.status === "PENDING_APPROVAL") return isCreator || isAssignee || isManager
+      if (task.status === "PENDING_ACCEPTANCE") return isCreator || isManager
+      return false
   }
 
   return false

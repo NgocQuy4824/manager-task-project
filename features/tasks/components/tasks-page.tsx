@@ -66,6 +66,11 @@ function moveCopy(from: TaskStatusType, to: TaskStatusType): { title: string; de
   if (to === "DONE") return { ...base, title: "Nghiệm thu hoàn thành", description: "Chấp nhận và đưa task sang Hoàn thành.", confirmLabel: "Xác nhận hoàn thành" }
   if (to === "PENDING_ACCEPTANCE") return { ...base, title: "Gửi nghiệm thu", description: "Đưa task sang Chờ nghiệm thu để người review xử lý.", confirmLabel: "Xác nhận gửi" }
   if (from === "REJECTED" && to === "TODO") return { ...base, title: "Làm lại", description: "Đưa task từ Bị từ chối trở lại Cần làm.", confirmLabel: "Xác nhận làm lại" }
+  if (to === "REJECTED") {
+    if (from === "PENDING_APPROVAL") return { ...base, title: "Từ chối task", description: "Từ chối task đang chờ duyệt. Task sẽ sang Bị từ chối.", confirmLabel: "Từ chối", requireReason: true }
+    if (from === "PENDING_ACCEPTANCE") return { ...base, title: "Từ chối nghiệm thu", description: "Từ chối nghiệm thu — Task sẽ sang Bị từ chối.", confirmLabel: "Từ chối", requireReason: true }
+    return { ...base, title: "Từ chối", description: "Từ chối task.", confirmLabel: "Từ chối", requireReason: true }
+  }
   return base
 }
 

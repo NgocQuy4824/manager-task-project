@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { getSession, unauthorized, forbidden, notFound } from "@/lib/server-auth"
 import { updateTaskSchema } from "@/lib/validations/task"
 import { canAccessProject } from "@/lib/server-auth"
+import { validateTaskAssignment } from "@/lib/server/task-assignment"
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const user = await getSession()
@@ -12,8 +13,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     where: { id: params.id },
     include: {
       creator: { select: { id: true, name: true, email: true } },
-      assignee: { select: { id: true, name: true, email: true } },
-      executor: { select: { id: true, name: true, email: true } },
+      assignee: { select: { id: true, name: true, email: true, isActive: true } },
+      executor: { select: { id: true, name: true, email: true, isActive: true } },
       project: { select: { id: true, name: true, ownerId: true } },
       transitions: {
         orderBy: { createdAt: "asc" },
@@ -53,10 +54,22 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (parsed.data.dueDate !== undefined) data.dueDate = parsed.data.dueDate
   if (parsed.data.isDraft !== undefined) data.isDraft = parsed.data.isDraft
   if (parsed.data.pendingApproval !== undefined) data.pendingApproval = parsed.data.pendingApproval
+
+  const assigneeChanged = parsed.data.assigneeId !== undefined && parsed.data.assigneeId !== task.assigneeId
+  const executorChanged = parsed.data.executorId !== undefined && parsed.data.executorId !== task.executorId
+  const assignmentErr = await validateTaskAssignment(task.projectId, {
+    assigneeId: assigneeChanged ? (parsed.data.assigneeId ?? null) : null,
+    executorId: executorChanged ? (parsed.data.executorId ?? null) : null,
+  })
+  if (assignmentErr) return NextResponse.json({ error: assignmentErr.message }, { status: 422 })
   if (parsed.data.assigneeId !== undefined) data.assigneeId = parsed.data.assigneeId
   if (parsed.data.executorId !== undefined) data.executorId = parsed.data.executorId
 
   if (parsed.data.status !== undefined) {
+    // Bị từ chối chỉ được tạo qua /transition (bắt buộc có lý do + lịch sử)
+    if (parsed.data.status === "REJECTED") {
+      return NextResponse.json({ error: "Không thể đặt Bị từ chối trực tiếp; vui lòng dùng chức năng Từ chối." }, { status: 422 })
+    }
     data.status = parsed.data.status
     if (parsed.data.status === "PENDING_APPROVAL") data.pendingApproval = true
     if (parsed.data.status === "PENDING_ACCEPTANCE") data.pendingApproval = false

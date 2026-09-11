@@ -14,6 +14,7 @@ function transitionMessage(from: string, to: string): string {
   if (to === "PENDING_ACCEPTANCE") return "Đã gửi nghiệm thu"
   if (to === "IN_PROGRESS") return "Đã bắt đầu làm"
   if (to === "TODO") return "Đã đưa về Cần làm"
+  if (to === "REJECTED") return "Đã từ chối task"
   return `Đã chuyển sang ${TASK_STATUS_LABELS[to as TaskStatusType] ?? to}`
 }
 
@@ -99,6 +100,8 @@ function applyOptimisticTransition(t: TaskItem, to: string, reason?: string): Ta
   else if (to === "TODO") {
     next.pendingApproval = false
     if (t.status === "REJECTED") next.reviewNote = null
+  } else if (to === "REJECTED") {
+    next.pendingApproval = false; next.reviewNote = reason ?? null
   } else if (to === "IN_PROGRESS") {
     next.pendingApproval = false; next.isDraft = false
     if (t.status === "PENDING_ACCEPTANCE" || t.status === "DONE") next.reviewNote = reason ?? null
