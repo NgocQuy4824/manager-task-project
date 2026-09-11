@@ -87,9 +87,10 @@ async function fetchStats(
 
   const queryString = params.toString()
 
+  // API đúng của project: /api/start
   const url = queryString
-    ? `/api/stats?${queryString}`
-    : "/api/stats"
+    ? `/api/start?${queryString}`
+    : "/api/start"
 
   const response = await fetch(url, {
     credentials: "include",
@@ -102,8 +103,7 @@ async function fetchStats(
       .catch(() => ({}))
 
     throw new Error(
-      body?.error ??
-        "Không thể tải thống kê"
+      body?.error ?? "Không thể tải thống kê"
     )
   }
 
@@ -119,11 +119,9 @@ export function useStats(
       projectId ?? "",
     ],
 
-    queryFn: () =>
-      fetchStats(projectId),
+    queryFn: () => fetchStats(projectId),
 
-    placeholderData:
-      keepPreviousData,
+    placeholderData: keepPreviousData,
 
     staleTime: 30_000,
   })
