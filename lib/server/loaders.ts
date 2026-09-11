@@ -15,15 +15,6 @@ import type {
   TaskItem,
 } from "@/features/tasks/types"
 
-/**
- * Server-side data loaders dùng chung cho API route handler và SSR prefetch.
- * Trả về đúng shape JSON mà client fetch nhận được,
- * để HydrationBoundary khớp cache.
- */
-
-/* =========================================================
-   DASHBOARD
-========================================================= */
 
 export type StatsResult =
   | { data: StatsData }
@@ -34,6 +25,12 @@ export async function loadStats(
   projectId?: string
 ): Promise<StatsResult> {
   const isAdmin = user.role === "ADMIN"
+
+  /*
+   * ========================================================
+   * 1. PROJECT USER ĐƯỢC PHÉP XEM
+   * ========================================================
+   */
 
   let allowedProjectIds: string[] | null = null
 
@@ -63,6 +60,9 @@ export async function loadStats(
       (project) => project.id
     )
 
+    /*
+     * User chọn project nhưng không có quyền
+     */
     if (
       projectId &&
       !allowedProjectIds.includes(projectId)
@@ -72,6 +72,12 @@ export async function loadStats(
       }
     }
   }
+
+  /*
+   * ========================================================
+   * 2. FILTER
+   * ========================================================
+   */
 
   const projectFilter = projectId
     ? {
@@ -97,36 +103,210 @@ export async function loadStats(
         }
       : {}
 
+  const now = new Date()
+
+  const next7Days = new Date(now)
+
+  next7Days.setDate(
+    next7Days.getDate() + 7
+  )
+
+  /*
+   * ========================================================
+   * 3. QUERY DASHBOARD
+   * ========================================================
+   */
+
   const [
     totalProjects,
     totalTasks,
+
+    pendingApproval,
+    todo,
+    inProgress,
+    pendingAcceptance,
+    done,
+    rejected,
+
+    overdueTasks,
+    upcomingTasks,
+
     byStatusRaw,
     byPriorityRaw,
-    recentTasks,
     projectBreakdown,
+
+    recentTasksRaw,
+    upcomingTasksRaw,
+
+    transitionsRaw,
   ] = await Promise.all([
+    /*
+     * Tổng project
+     */
     db.project.count({
       where: projectWhere as never,
     }),
 
+    /*
+     * Tổng task
+     */
     db.task.count({
       where: projectFilter as never,
     }),
 
+    /*
+     * ---------------------------------------------
+     * STATUS
+     * ---------------------------------------------
+     */
+
+    db.task.count({
+      where: {
+        ...(projectFilter as object),
+        status: "PENDING_APPROVAL",
+      } as never,
+    }),
+
+    db.task.count({
+      where: {
+        ...(projectFilter as object),
+        status: "TODO",
+      } as never,
+    }),
+
+    db.task.count({
+      where: {
+        ...(projectFilter as object),
+        status: "IN_PROGRESS",
+      } as never,
+    }),
+
+    db.task.count({
+      where: {
+        ...(projectFilter as object),
+        status: "PENDING_ACCEPTANCE",
+      } as never,
+    }),
+
+    db.task.count({
+      where: {
+        ...(projectFilter as object),
+        status: "DONE",
+      } as never,
+    }),
+
+    db.task.count({
+      where: {
+        ...(projectFilter as object),
+        status: "REJECTED",
+      } as never,
+    }),
+
+    /*
+     * ---------------------------------------------
+     * TASK QUÁ HẠN
+     * ---------------------------------------------
+     */
+
+    db.task.count({
+      where: {
+        ...(projectFilter as object),
+
+        dueDate: {
+          lt: now,
+        },
+
+        status: {
+          notIn: [
+            "DONE",
+            "REJECTED",
+          ],
+        },
+      } as never,
+    }),
+
+    /*
+     * ---------------------------------------------
+     * TASK SẮP ĐẾN HẠN
+     * 7 ngày tiếp theo
+     * ---------------------------------------------
+     */
+
+    db.task.count({
+      where: {
+        ...(projectFilter as object),
+
+        dueDate: {
+          gte: now,
+          lte: next7Days,
+        },
+
+        status: {
+          notIn: [
+            "DONE",
+            "REJECTED",
+          ],
+        },
+      } as never,
+    }),
+
+    /*
+     * ---------------------------------------------
+     * GROUP STATUS
+     * ---------------------------------------------
+     */
+
     db.task.groupBy({
       by: ["status"],
-      where: projectFilter as never,
+
+      where:
+        projectFilter as never,
+
       _count: true,
     }),
+
+    /*
+     * ---------------------------------------------
+     * GROUP PRIORITY
+     * ---------------------------------------------
+     */
 
     db.task.groupBy({
       by: ["priority"],
-      where: projectFilter as never,
+
+      where:
+        projectFilter as never,
+
       _count: true,
     }),
 
+    /*
+     * ---------------------------------------------
+     * GROUP PROJECT
+     * ---------------------------------------------
+     */
+
+    db.task.groupBy({
+      by: ["projectId"],
+
+      where:
+        projectFilter as never,
+
+      _count: true,
+    }),
+
+    /*
+     * ---------------------------------------------
+     * 5 TASK CẬP NHẬT GẦN NHẤT
+     * ---------------------------------------------
+     *
+     * Không include project để tránh lỗi
+     * relation mồ côi trong MongoDB.
+     */
+
     db.task.findMany({
-      where: projectFilter as never,
+      where:
+        projectFilter as never,
 
       orderBy: {
         updatedAt: "desc",
@@ -139,87 +319,453 @@ export async function loadStats(
         title: true,
         status: true,
         priority: true,
+        dueDate: true,
         updatedAt: true,
-
-        project: {
-          select: {
-            name: true,
-          },
-        },
+        projectId: true,
       },
     }),
 
-    db.task.groupBy({
-      by: ["projectId"],
-      where: projectFilter as never,
-      _count: true,
+    /*
+     * ---------------------------------------------
+     * 5 TASK SẮP ĐẾN HẠN
+     * ---------------------------------------------
+     */
+
+    db.task.findMany({
+      where: {
+        ...(projectFilter as object),
+
+        dueDate: {
+          gte: now,
+          lte: next7Days,
+        },
+
+        status: {
+          notIn: [
+            "DONE",
+            "REJECTED",
+          ],
+        },
+      } as never,
+
+      orderBy: {
+        dueDate: "asc",
+      },
+
+      take: 5,
+
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        priority: true,
+        dueDate: true,
+        projectId: true,
+      },
+    }),
+
+    /*
+     * ---------------------------------------------
+     * 8 HOẠT ĐỘNG GẦN NHẤT
+     * ---------------------------------------------
+     */
+
+    db.taskTransition.findMany({
+      where: {
+        task: projectFilter as never,
+      } as never,
+
+      orderBy: {
+        createdAt: "desc",
+      },
+
+      take: 8,
+
+      select: {
+        id: true,
+        taskId: true,
+        from: true,
+        to: true,
+        reason: true,
+        actorId: true,
+        createdAt: true,
+      },
     }),
   ])
 
-  const projectIds = projectBreakdown.map(
-    (item) => item.projectId
+  /*
+   * ========================================================
+   * 4. LẤY PROJECT NAME
+   * ========================================================
+   */
+
+  const projectIds = Array.from(
+    new Set([
+      ...projectBreakdown.map(
+        (item) => item.projectId
+      ),
+
+      ...recentTasksRaw.map(
+        (item) => item.projectId
+      ),
+
+      ...upcomingTasksRaw.map(
+        (item) => item.projectId
+      ),
+    ])
   )
 
-  const projectsMap = projectIds.length
-    ? Object.fromEntries(
-        (
-          await db.project.findMany({
-            where: {
-              id: {
-                in: projectIds,
-              },
+  const projects =
+    projectIds.length > 0
+      ? await db.project.findMany({
+          where: {
+            id: {
+              in: projectIds,
             },
+          },
 
-            select: {
-              id: true,
-              name: true,
-            },
-          })
-        ).map((project) => [
+          select: {
+            id: true,
+            name: true,
+          },
+        })
+      : []
+
+  const projectMap =
+    new Map(
+      projects.map(
+        (project) => [
           project.id,
           project.name,
-        ])
+        ]
       )
-    : {}
+    )
+
+  /*
+   * ========================================================
+   * 5. LẤY TASK + USER CHO ACTIVITY
+   * ========================================================
+   */
+
+  const transitionTaskIds =
+    Array.from(
+      new Set(
+        transitionsRaw.map(
+          (transition) =>
+            transition.taskId
+        )
+      )
+    )
+
+  const actorIds =
+    Array.from(
+      new Set(
+        transitionsRaw.map(
+          (transition) =>
+            transition.actorId
+        )
+      )
+    )
+
+  const [
+    transitionTasks,
+    actors,
+  ] = await Promise.all([
+    /*
+     * Task của transition
+     */
+    transitionTaskIds.length > 0
+      ? db.task.findMany({
+          where: {
+            id: {
+              in: transitionTaskIds,
+            },
+          },
+
+          select: {
+            id: true,
+            title: true,
+          },
+        })
+      : [],
+
+    /*
+     * User thực hiện transition
+     */
+    actorIds.length > 0
+      ? db.user.findMany({
+          where: {
+            id: {
+              in: actorIds,
+            },
+          },
+
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        })
+      : [],
+  ])
+
+  const taskMap =
+    new Map(
+      transitionTasks.map(
+        (task) => [
+          task.id,
+          task.title,
+        ]
+      )
+    )
+
+  const actorMap =
+    new Map(
+      actors.map(
+        (actor) => [
+          actor.id,
+          {
+            name: actor.name,
+            email: actor.email,
+          },
+        ]
+      )
+    )
+
+  /*
+   * ========================================================
+   * 6. STATUS DATA
+   * ========================================================
+   */
+
+  const byStatus =
+    byStatusRaw.map(
+      (item) => ({
+        status: String(
+          item.status
+        ),
+
+        count: item._count,
+      })
+    )
+
+  /*
+   * ========================================================
+   * 7. PRIORITY DATA
+   * ========================================================
+   */
+
+  const byPriority =
+    byPriorityRaw.map(
+      (item) => ({
+        priority: String(
+          item.priority
+        ),
+
+        count: item._count,
+      })
+    )
+
+  /*
+   * ========================================================
+   * 8. PROJECT DATA
+   * ========================================================
+   */
+
+  const byProject =
+    projectBreakdown.map(
+      (item) => ({
+        projectId:
+          item.projectId,
+
+        name:
+          projectMap.get(
+            item.projectId
+          ) ??
+          "Project không tồn tại",
+
+        count:
+          item._count,
+      })
+    )
+
+  /*
+   * ========================================================
+   * 9. RECENT TASKS
+   * ========================================================
+   */
+
+  const recentTasks =
+    recentTasksRaw.map(
+      (task) => ({
+        id: task.id,
+
+        title: task.title,
+
+        status: String(
+          task.status
+        ),
+
+        priority: String(
+          task.priority
+        ),
+
+        dueDate:
+          task.dueDate
+            ? task.dueDate.toISOString()
+            : null,
+
+        updatedAt:
+          task.updatedAt.toISOString(),
+
+        project:
+          projectMap.has(
+            task.projectId
+          )
+            ? {
+                name:
+                  projectMap.get(
+                    task.projectId
+                  ) ??
+                  "Project",
+              }
+            : null,
+      })
+    )
+
+  /*
+   * ========================================================
+   * 10. UPCOMING TASKS
+   * ========================================================
+   */
+
+  const upcomingTaskList =
+    upcomingTasksRaw
+      .filter(
+        (task) =>
+          task.dueDate !== null
+      )
+      .map(
+        (task) => ({
+          id: task.id,
+
+          title: task.title,
+
+          status: String(
+            task.status
+          ),
+
+          priority: String(
+            task.priority
+          ),
+
+          dueDate:
+            task.dueDate!.toISOString(),
+
+          project:
+            projectMap.has(
+              task.projectId
+            )
+              ? {
+                  name:
+                    projectMap.get(
+                      task.projectId
+                    ) ??
+                    "Project",
+                }
+              : null,
+        })
+      )
+
+  /*
+   * ========================================================
+   * 11. RECENT ACTIVITIES
+   * ========================================================
+   */
+
+  const recentActivities =
+    transitionsRaw.map(
+      (transition) => ({
+        id: transition.id,
+
+        taskId:
+          transition.taskId,
+
+        taskTitle:
+          taskMap.get(
+            transition.taskId
+          ) ??
+          "Task không tồn tại",
+
+        from:
+          transition.from
+            ? String(
+                transition.from
+              )
+            : null,
+
+        to: String(
+          transition.to
+        ),
+
+        reason:
+          transition.reason,
+
+        createdAt:
+          transition.createdAt.toISOString(),
+
+        actor:
+          actorMap.get(
+            transition.actorId
+          ) ?? null,
+      })
+    )
+
+  /*
+   * ========================================================
+   * 12. TỶ LỆ HOÀN THÀNH
+   * ========================================================
+   */
+
+  const completionRate =
+    totalTasks > 0
+      ? Math.round(
+          (done / totalTasks) *
+            100
+        )
+      : 0
+
+  /*
+   * ========================================================
+   * 13. RETURN
+   * ========================================================
+   */
 
   return {
     data: {
       totalProjects,
       totalTasks,
 
-      byStatus: byStatusRaw.map(
-        (item) => ({
-          status: item.status,
-          count: item._count,
-        })
-      ),
+      pendingApproval,
+      todo,
+      inProgress,
+      pendingAcceptance,
+      done,
+      rejected,
 
-      byPriority: byPriorityRaw.map(
-        (item) => ({
-          priority: item.priority,
-          count: item._count,
-        })
-      ),
+      overdueTasks,
+      upcomingTasks,
+      completionRate,
 
-      byProject: projectBreakdown.map(
-        (item) => ({
-          projectId: item.projectId,
+      byStatus,
+      byPriority,
+      byProject,
 
-          name:
-            (
-              projectsMap as Record<
-                string,
-                string
-              >
-            )[item.projectId] ??
-            item.projectId,
+      recentTasks,
 
-          count: item._count,
-        })
-      ),
+      upcomingTaskList,
 
-      recentTasks:
-        recentTasks as unknown as StatsData["recentTasks"],
+      recentActivities,
     },
   }
 }
@@ -252,6 +798,7 @@ export async function loadProjects(
             {
               ownerId: user.id,
             },
+
             {
               members: {
                 some: {
@@ -266,6 +813,7 @@ export async function loadProjects(
     ? {
         AND: [
           visibleWhere,
+
           {
             name: {
               contains: search,
@@ -316,24 +864,19 @@ export async function loadProjects(
   /*
    * Không include owner trực tiếp.
    *
-   * Vì owner là relation bắt buộc trong Prisma:
-   *
-   * owner User @relation(...)
-   *
-   * Nếu MongoDB có project trỏ tới user đã bị xóa,
-   * Prisma sẽ báo:
-   *
-   * Inconsistent query result:
-   * Field owner is required to return data, got null
+   * MongoDB có thể có project trỏ tới
+   * User đã bị xóa.
    */
 
-  const ownerIds = Array.from(
-    new Set(
-      projects.map(
-        (project) => project.ownerId
+  const ownerIds =
+    Array.from(
+      new Set(
+        projects.map(
+          (project) =>
+            project.ownerId
+        )
       )
     )
-  )
 
   const owners =
     ownerIds.length > 0
@@ -352,30 +895,36 @@ export async function loadProjects(
         })
       : []
 
-  const ownerMap = new Map(
-    owners.map((owner) => [
-      owner.id,
-      owner,
-    ])
-  )
+  const ownerMap =
+    new Map(
+      owners.map(
+        (owner) => [
+          owner.id,
+          owner,
+        ]
+      )
+    )
 
-  const data = projects.map(
-    (project) => ({
-      ...project,
+  const data =
+    projects.map(
+      (project) => ({
+        ...project,
 
-      owner:
-        ownerMap.get(
-          project.ownerId
-        ) ?? null,
-    })
-  )
+        owner:
+          ownerMap.get(
+            project.ownerId
+          ) ?? null,
+      })
+    )
 
   return {
     data:
       data as unknown as ProjectListItem[],
 
     total,
+
     page,
+
     pageSize,
   }
 }
@@ -388,7 +937,10 @@ export type UsersListParams = {
   page: number
   pageSize: number
   search?: string
-  status?: "ALL" | "ACTIVE" | "INACTIVE"
+  status?:
+    | "ALL"
+    | "ACTIVE"
+    | "INACTIVE"
 }
 
 export async function loadUsers({
@@ -466,7 +1018,9 @@ export async function loadUsers({
       data as unknown as UserListItem[],
 
     total,
+
     page,
+
     pageSize,
   }
 }
@@ -584,7 +1138,8 @@ export async function loadTasks(
       )
 
     /*
-     * User không có quyền truy cập project
+     * User không có quyền
+     * với project được yêu cầu.
      */
 
     if (
@@ -599,7 +1154,7 @@ export async function loadTasks(
     }
 
     /*
-     * Không có project nào
+     * Không có project nào.
      */
 
     if (
@@ -608,8 +1163,11 @@ export async function loadTasks(
     ) {
       return {
         data: [],
+
         total: 0,
+
         page: q.page,
+
         pageSize:
           q.pageSize,
       }
@@ -617,7 +1175,8 @@ export async function loadTasks(
 
     /*
      * Không truyền projectId
-     * → chỉ lấy các project user được phép xem
+     *
+     * → chỉ lấy project user được xem.
      */
 
     if (!q.projectId) {
@@ -630,10 +1189,10 @@ export async function loadTasks(
   /* =====================================================
      LẤY TASK
 
-     QUAN TRỌNG:
-     KHÔNG include creator / assignee / executor / project
-     
-     Vì các relation này có thể bị mồ côi trong MongoDB.
+     KHÔNG include creator / assignee /
+     executor / project.
+
+     Tránh lỗi relation mồ côi MongoDB.
   ===================================================== */
 
   const [
@@ -661,11 +1220,6 @@ export async function loadTasks(
 
   /* =====================================================
      LẤY USER ID
-
-     Bao gồm:
-     - creatorId
-     - assigneeId
-     - executorId
   ===================================================== */
 
   const userIds =
@@ -689,8 +1243,6 @@ export async function loadTasks(
 
   /* =====================================================
      LẤY USER
-
-     Chỉ những User thực sự tồn tại
   ===================================================== */
 
   const users =
@@ -762,15 +1314,6 @@ export async function loadTasks(
 
   /* =====================================================
      GHÉP DỮ LIỆU
-
-     Nếu User hoặc Project đã bị xóa:
-     
-     creator  = null
-     assignee = null
-     executor = null
-     project  = null
-
-     → Không làm Prisma crash.
   ===================================================== */
 
   const data =
