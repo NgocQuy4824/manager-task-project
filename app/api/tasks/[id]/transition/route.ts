@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { db } from "@/lib/db"
-import { getSession, unauthorized, forbidden, notFound } from "@/lib/server-auth"
-import { canTransition } from "@/lib/workflow"
+import { getSession, unauthorized, forbidden, notFound, conflict } from "@/lib/server-auth"
+import { canTransition, isTaskFrozen } from "@/lib/workflow"
 import { transitionTaskSchema } from "@/lib/validations/task"
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
@@ -17,9 +17,32 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const task = await db.task.findUnique({ where: { id: params.id } })
   if (!task) return notFound()
 
+  // Guard: task bị đóng băng khi assignee hoặc executor đã bị vô hiệu hóa
+  {
+    const ids = [task.assigneeId, task.executorId].filter(Boolean) as string[]
+    if (ids.length > 0) {
+      const users = await db.user.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, isActive: true },
+      })
+      const byId = new Map(users.map((u) => [u.id, u]))
+      const assignee = task.assigneeId ? (byId.get(task.assigneeId) as { isActive?: boolean } | undefined) ?? null : null
+      const executor = task.executorId ? (byId.get(task.executorId) as { isActive?: boolean } | undefined) ?? null : null
+      if (isTaskFrozen(assignee, executor)) {
+        return conflict(
+          "Task đang bị đóng băng vì người được giao/người thực hiện đã bị vô hiệu hóa. Vui lòng gán lại cho thành viên đang hoạt động trước khi chuyển trạng thái.",
+        )
+      }
+    }
+  }
+
   // Trả về làm lại (PENDING_ACCEPTANCE / DONE → IN_PROGRESS): bắt buộc có lý do
   if (targetStatus === "IN_PROGRESS" && (task.status === "PENDING_ACCEPTANCE" || task.status === "DONE") && !reasonRaw) {
     return NextResponse.json({ error: "Vui lòng nhập lý do khi trả task về làm lại" }, { status: 422 })
+  }
+  // Từ chối ở cổng phê duyệt: bắt buộc có lý do
+  if (targetStatus === "REJECTED" && !reasonRaw) {
+    return NextResponse.json({ error: "Vui lòng nhập lý do khi từ chối task" }, { status: 422 })
   }
 
   const allowed = canTransition(
@@ -54,6 +77,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       // Làm lại từ trạng thái bị từ chối: xóa lý do cũ
       data.reviewNote = null
     }
+  }
+  if (targetStatus === "REJECTED") {
+    data.pendingApproval = false
+    data.reviewNote = reasonRaw
   }
   if (targetStatus === "IN_PROGRESS") {
     data.pendingApproval = false

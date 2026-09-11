@@ -50,6 +50,8 @@ const MOVES: Record<string, MoveConfig> = {
   submitReview: { title: "Gửi nghiệm thu", description: "Đưa task từ Đang làm sang Chờ nghiệm thu để người review xử lý.", confirmLabel: "Xác nhận gửi" },
   accept: { title: "Nghiệm thu hoàn thành", description: "Chấp nhận và đưa task sang Hoàn thành.", confirmLabel: "Xác nhận hoàn thành" },
   rework: { title: "Trả về Đang làm", description: "Trả task từ Chờ nghiệm thu về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Gửi yêu cầu", requireReason: true, reasonLabel: "Lý do trả về *", reasonPlaceholder: "Giải thích vì sao cần làm lại..." },
+  rejectApproval: { title: "Từ chối task", description: "Từ chối task đang chờ duyệt. Task sẽ sang Bị từ chối.", confirmLabel: "Từ chối", requireReason: true, reasonLabel: "Lý do từ chối *", reasonPlaceholder: "Giải thích vì sao từ chối..." },
+  rejectAcceptance: { title: "Từ chối nghiệm thu", description: "Từ chối nghiệm thu — Task sẽ sang Bị từ chối.", confirmLabel: "Từ chối", requireReason: true, reasonLabel: "Lý do từ chối *", reasonPlaceholder: "Giải thích vì sao từ chối..." },
   reopen: { title: "Mở lại Đang làm", description: "Mở lại task từ Hoàn thành về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Xác nhận mở lại", requireReason: true, reasonLabel: "Lý do mở lại *", reasonPlaceholder: "Giải thích vì sao cần mở lại..." },
   redo: { title: "Làm lại", description: "Đưa task từ Bị từ chối trở lại Cần làm.", confirmLabel: "Xác nhận làm lại" },
 }
@@ -82,6 +84,11 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
 
   const isReviewer = isAdmin || isManager || isCreator
 
+  // Task bị đóng băng khi assignee hoặc executor đã bị vô hiệu hóa
+  const assigneeDisabled = t.assignee?.isActive === false
+  const executorDisabled = t.executor?.isActive === false
+  const frozen = assigneeDisabled || executorDisabled
+
   // Nút hành động theo ma trận chuyển trạng thái tuyến tính
   const canApproveStart = (isAdmin || isManager || isCreator || isAssignee) && t.status === "PENDING_APPROVAL"
   const canStartWork = (isAdmin || isExecutor || isAssignee) && t.status === "TODO"
@@ -89,6 +96,8 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
   const canSubmitReview = (isAdmin || isExecutor || isAssignee || isCreator) && t.status === "IN_PROGRESS"
   const canAccept = isReviewer && t.status === "PENDING_ACCEPTANCE"
   const canRework = isReviewer && t.status === "PENDING_ACCEPTANCE"
+  const canRejectApproval = (isAdmin || isManager || isCreator || isAssignee) && t.status === "PENDING_APPROVAL"
+  const canRejectAcceptance = isReviewer && t.status === "PENDING_ACCEPTANCE"
   const canReopen = isReviewer && t.status === "DONE"
   const canRedo = (isRelated || isAdmin) && t.status === "REJECTED"
 
@@ -160,23 +169,36 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
         </Card>
       )}
 
+      {frozen && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+          <p className="font-semibold">Task đang bị đóng băng.</p>
+          <p className="mt-1">Người được giao hoặc người thực hiện đã bị vô hiệu hóa. Vui lòng gán lại cho thành viên đang hoạt động trước khi chuyển trạng thái.</p>
+          <Button size="sm" className="mt-3" onClick={() => setEditOpen(true)}>Gán lại người thực hiện</Button>
+        </div>
+      )}
+
       <Card className="border shadow-soft">
         <CardHeader><CardTitle className="text-base font-semibold">Hành động</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {actionErr && <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">{actionErr}</p>}
           <div className="flex flex-wrap gap-2">
-            {canApproveStart && <Button onClick={() => openMove("approveStart", "TODO")} disabled={transMut.isPending}>Duyệt để bắt đầu</Button>}
-            {canStartWork && <Button onClick={() => openMove("startWork", "IN_PROGRESS")} disabled={transMut.isPending}>Bắt đầu làm</Button>}
-            {canBackToTodo && <Button variant="outline" onClick={() => openMove("backToTodo", "TODO")} disabled={transMut.isPending}>Đưa về Cần làm</Button>}
-            {canSubmitReview && <Button onClick={() => openMove("submitReview", "PENDING_ACCEPTANCE")} disabled={transMut.isPending}>Gửi nghiệm thu</Button>}
-            {canAccept && <Button onClick={() => openMove("accept", "DONE")} disabled={transMut.isPending}>Nghiệm thu hoàn thành</Button>}
-            {canRework && <Button variant="outline" onClick={() => openMove("rework", "IN_PROGRESS")} disabled={transMut.isPending}>Trả về Đang làm</Button>}
-            {canReopen && <Button variant="outline" onClick={() => openMove("reopen", "IN_PROGRESS")} disabled={transMut.isPending}>Mở lại Đang làm</Button>}
-            {canRedo && <Button variant="outline" onClick={() => openMove("redo", "TODO")} disabled={transMut.isPending}>Làm lại</Button>}
-            {!(canApproveStart || canStartWork || canBackToTodo || canSubmitReview || canAccept || canRework || canReopen || canRedo) && (
+            {canApproveStart && <Button onClick={() => openMove("approveStart", "TODO")} disabled={transMut.isPending || frozen}>Duyệt để bắt đầu</Button>}
+            {canStartWork && <Button onClick={() => openMove("startWork", "IN_PROGRESS")} disabled={transMut.isPending || frozen}>Bắt đầu làm</Button>}
+            {canBackToTodo && <Button variant="outline" onClick={() => openMove("backToTodo", "TODO")} disabled={transMut.isPending || frozen}>Đưa về Cần làm</Button>}
+            {canSubmitReview && <Button onClick={() => openMove("submitReview", "PENDING_ACCEPTANCE")} disabled={transMut.isPending || frozen}>Gửi nghiệm thu</Button>}
+            {canAccept && <Button onClick={() => openMove("accept", "DONE")} disabled={transMut.isPending || frozen}>Nghiệm thu hoàn thành</Button>}
+            {canRework && <Button variant="outline" onClick={() => openMove("rework", "IN_PROGRESS")} disabled={transMut.isPending || frozen}>Trả về Đang làm</Button>}
+            {canRejectApproval && <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => openMove("rejectApproval", "REJECTED")} disabled={transMut.isPending || frozen}>Từ chối</Button>}
+            {canRejectAcceptance && <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => openMove("rejectAcceptance", "REJECTED")} disabled={transMut.isPending || frozen}>Từ chối</Button>}
+            {canReopen && <Button variant="outline" onClick={() => openMove("reopen", "IN_PROGRESS")} disabled={transMut.isPending || frozen}>Mở lại Đang làm</Button>}
+            {canRedo && <Button variant="outline" onClick={() => openMove("redo", "TODO")} disabled={transMut.isPending || frozen}>Làm lại</Button>}
+            {!(canApproveStart || canStartWork || canBackToTodo || canSubmitReview || canAccept || canRework || canRejectApproval || canRejectAcceptance || canReopen || canRedo) && !frozen && (
               <span className="text-sm text-muted-foreground">
                 {isRelated || isAdmin ? "Không có hành động nào khả dụng cho trạng thái hiện tại." : "Bạn không có quyền thao tác task này."}
               </span>
+            )}
+            {frozen && !(canApproveStart || canStartWork || canBackToTodo || canSubmitReview || canAccept || canRework || canRejectApproval || canRejectAcceptance || canReopen || canRedo) && (
+              <span className="text-sm text-amber-700 dark:text-amber-300">Mọi thao tác chuyển trạng thái đã bị khóa do đóng băng.</span>
             )}
           </div>
         </CardContent>
@@ -220,11 +242,11 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
             </div>
             <div className="flex items-center gap-2 truncate text-muted-foreground">
               <UserPlus className="h-4 w-4 shrink-0 opacity-60" />
-              <span className="truncate">Giao cho: <span className="font-medium text-foreground">{t.assignee?.name ?? t.assignee?.email ?? "—"}</span></span>
+              <span className="truncate">Giao cho: <span className="font-medium text-foreground">{t.assignee?.name ?? t.assignee?.email ?? "—"}</span>{assigneeDisabled && <Badge variant="destructive" className="ml-2">Đã vô hiệu hóa</Badge>}</span>
             </div>
             <div className="flex items-center gap-2 truncate text-muted-foreground">
               <UserCog className="h-4 w-4 shrink-0 opacity-60" />
-              <span className="truncate">Thực hiện: <span className="font-medium text-foreground">{t.executor?.name ?? t.executor?.email ?? "—"}</span></span>
+              <span className="truncate">Thực hiện: <span className="font-medium text-foreground">{t.executor?.name ?? t.executor?.email ?? "—"}</span>{executorDisabled && <Badge variant="destructive" className="ml-2">Đã vô hiệu hóa</Badge>}</span>
             </div>
             <div className="flex items-center gap-2 truncate text-muted-foreground">
               <Clock3 className="h-4 w-4 shrink-0 opacity-60" />

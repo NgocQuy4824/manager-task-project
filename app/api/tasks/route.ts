@@ -5,6 +5,7 @@ import { loadTasks } from "@/lib/server/loaders"
 import { createTaskSchema, taskQuerySchema } from "@/lib/validations/task"
 import { canAccessProject } from "@/lib/server-auth"
 import { db } from "@/lib/db"
+import { validateTaskAssignment } from "@/lib/server/task-assignment"
 
 export async function GET(req: Request) {
   const user = await getSession()
@@ -32,6 +33,12 @@ export async function POST(req: Request) {
   }
 
   if (!(await canAccessProject(user, parsed.data.projectId))) return forbidden()
+
+  const assignmentErr = await validateTaskAssignment(parsed.data.projectId, {
+    assigneeId: parsed.data.assigneeId ?? null,
+    executorId: parsed.data.executorId ?? null,
+  })
+  if (assignmentErr) return NextResponse.json({ error: assignmentErr.message }, { status: 422 })
 
   const task = await db.task.create({
     data: {

@@ -1258,6 +1258,7 @@ export async function loadTasks(
             id: true,
             name: true,
             email: true,
+            isActive: true,
           },
         })
       : []

@@ -44,7 +44,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Tài khoản đã bị Admin vô hiệu hóa
-        if (!user.isActive) {
+        if (user.isActive === false) {
           throw new Error(
             "Tài khoản của bạn đã bị vô hiệu hóa"
           )

@@ -27,8 +27,8 @@ export type TaskItem = {
   createdAt: string
   updatedAt: string
   creator?: { id: string; name: string | null; email: string }
-  assignee?: { id: string; name: string | null; email: string } | null
-  executor?: { id: string; name: string | null; email: string } | null
+  assignee?: { id: string; name: string | null; email: string; isActive?: boolean } | null
+  executor?: { id: string; name: string | null; email: string; isActive?: boolean } | null
   project?: { id: string; name: string }
   transitions?: TaskTransitionItem[]
 }

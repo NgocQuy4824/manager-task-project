@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -79,18 +80,60 @@ export function TaskDialog({ open, onOpenChange, editingId, defaultProjectId }: 
     }
   }
 
+  const { data: session } = useSession()
   const pending = createMut.isPending || updateMut.isPending
   const NONE = "__none__"
   const compact = "h-9 text-sm"
   const watchedProjectId = form.watch("projectId")
   const membersQ = useProjectMembers(watchedProjectId ?? "")
   const memberOptions = membersQ.data?.data ?? []
+  const owner = membersQ.data?.owner as { id: string; name: string | null; email: string } | undefined
   const hasProject = !!watchedProjectId
   function memberLabel(m: { role: string; user: { name: string | null; email: string } }): string {
     const name = m.user.name ? `${m.user.name} (${m.user.email})` : m.user.email
     const rl = (ROLE_LABELS[m.role as RoleType] ?? m.role) as string
     return `${name} — ${rl}`
   }
+  function ownerLabel(o: { name: string | null; email: string }): string {
+    const name = o.name ? `${o.name} (${o.email})` : o.email
+    return `${name} — Chủ sở hữu`
+  }
+  const LEADER_ROLES_SET = new Set<string>(["ADMIN", "MANAGER"])
+  const assigneeOptions = (() => {
+    const seen = new Set<string>()
+    const out: { value: string; label: string }[] = []
+    function push(value: string, label: string) {
+      if (seen.has(value)) return
+      seen.add(value)
+      out.push({ value, label })
+    }
+    if (owner) push(owner.id, ownerLabel(owner))
+    for (const m of memberOptions) {
+      if (LEADER_ROLES_SET.has(m.role)) push(m.userId, memberLabel(m))
+    }
+    return out
+  })()
+  const executorOptions = (() => {
+    const seen = new Set<string>()
+    const out: { value: string; label: string }[] = []
+    function push(value: string, label: string) {
+      if (seen.has(value)) return
+      seen.add(value)
+      out.push({ value, label })
+    }
+    if (owner) push(owner.id, ownerLabel(owner))
+    for (const m of memberOptions) push(m.userId, memberLabel(m))
+    return out
+  })()
+
+  useEffect(() => {
+    if (!open || isEdit || !hasProject || !membersQ.data || !owner) return
+    const cur = (form.getValues("assigneeId") ?? "") as string
+    if (cur) return
+    const sid = (session?.user as { id?: string } | undefined)?.id
+    const iAmLeader = !!(sid && (sid === owner.id || memberOptions.some((m) => m.userId === sid && LEADER_ROLES_SET.has(m.role))))
+    if (!iAmLeader) form.setValue("assigneeId", owner.id)
+  }, [open, isEdit, hasProject, membersQ.data, owner, session, memberOptions, form]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -147,10 +190,10 @@ export function TaskDialog({ open, onOpenChange, editingId, defaultProjectId }: 
                     <FormControl><SelectTrigger className={compact}><SelectValue placeholder={hasProject ? "—" : "Chọn project trước"} /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value={NONE}>— Không chọn —</SelectItem>
-                      {hasProject && memberOptions.length === 0 && !membersQ.isLoading && (
-                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">Chưa có thành viên nào trong project này.</div>
+                      {hasProject && assigneeOptions.length === 0 && !membersQ.isLoading && (
+                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">Chưa có leader nào trong project.</div>
                       )}
-                      {memberOptions.map((m) => <SelectItem key={m.id} value={m.userId}>{memberLabel(m)}</SelectItem>)}
+                      {assigneeOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                     </SelectContent>
                   </Select><FormMessage />
                 </FormItem>
@@ -161,10 +204,10 @@ export function TaskDialog({ open, onOpenChange, editingId, defaultProjectId }: 
                     <FormControl><SelectTrigger className={compact}><SelectValue placeholder={hasProject ? "—" : "Chọn project trước"} /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value={NONE}>— Không chọn —</SelectItem>
-                      {hasProject && memberOptions.length === 0 && !membersQ.isLoading && (
+                      {hasProject && executorOptions.length === 0 && !membersQ.isLoading && (
                         <div className="px-2 py-6 text-center text-sm text-muted-foreground">Chưa có thành viên nào trong project này.</div>
                       )}
-                      {memberOptions.map((m) => <SelectItem key={m.id} value={m.userId}>{memberLabel(m)}</SelectItem>)}
+                      {executorOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                     </SelectContent>
                   </Select><FormMessage />
                 </FormItem>
