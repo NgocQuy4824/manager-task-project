@@ -81,8 +81,10 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
   const isAssignee = !!userId && userId === t.assigneeId
   const isExecutor = !!userId && userId === t.executorId
   const isRelated = isCreator || isAssignee || isExecutor
-
-  const isReviewer = isAdmin || isManager || isCreator
+  // Người review = leader của project (chủ sở hữu) hoặc MANAGER/ADMIN.
+  // Creator KHÔNG tự nghiệm thu được (tránh MEMBER tạo task rồi tự duyệt).
+  const isProjectOwner = !!userId && !!t.project?.ownerId && userId === t.project.ownerId
+  const isReviewer = isAdmin || isManager || isProjectOwner
 
   // Task bị đóng băng khi assignee hoặc executor đã bị vô hiệu hóa
   const assigneeDisabled = t.assignee?.isActive === false

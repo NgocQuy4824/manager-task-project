@@ -50,8 +50,9 @@ function isOverdue(task: TaskItem) {
   return new Date(task.dueDate).getTime() < Date.now()
 }
 
-function SortableCard({ task, onRequestMove, onEdit, onDelete }: {
+function SortableCard({ task, canReview, onRequestMove, onEdit, onDelete }: {
   task: TaskItem
+  canReview: boolean
   onRequestMove: (taskId: string, from: TaskStatusType, to: TaskStatusType) => void
   onEdit: (id: string) => void
   onDelete: (id: string) => void
@@ -102,7 +103,7 @@ function SortableCard({ task, onRequestMove, onEdit, onDelete }: {
         </div>
         <div className="flex flex-wrap gap-1.5 pt-1" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           {task.status === "PENDING_APPROVAL" && <Button size="sm" variant="secondary" className="h-7 text-xs" disabled={frozen} onClick={() => onRequestMove(task.id, task.status as TaskStatusType, "TODO")}>Duyệt</Button>}
-          {task.status === "PENDING_ACCEPTANCE" && <Button size="sm" variant="secondary" className="h-7 text-xs" disabled={frozen} onClick={() => onRequestMove(task.id, task.status as TaskStatusType, "DONE")}>Nghiệm thu</Button>}
+          {task.status === "PENDING_ACCEPTANCE" && canReview && <Button size="sm" variant="secondary" className="h-7 text-xs" disabled={frozen} onClick={() => onRequestMove(task.id, task.status as TaskStatusType, "DONE")}>Nghiệm thu</Button>}
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onEdit(task.id)}>Sửa</Button>
           <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => onDelete(task.id)}>Xóa</Button>
         </div>
@@ -111,9 +112,10 @@ function SortableCard({ task, onRequestMove, onEdit, onDelete }: {
   )
 }
 
-function Column({ status, tasks, onRequestMove, onEdit, onDelete }: {
+function Column({ status, tasks, canReview, onRequestMove, onEdit, onDelete }: {
   status: TaskStatusType
   tasks: TaskItem[]
+  canReview: boolean
   onRequestMove: (taskId: string, from: TaskStatusType, to: TaskStatusType) => void
   onEdit: (id: string) => void
   onDelete: (id: string) => void
@@ -133,7 +135,7 @@ function Column({ status, tasks, onRequestMove, onEdit, onDelete }: {
       </div>
       <SortableContext id={status} items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden py-0.5 pr-0.5">
-          {tasks.map((t) => <SortableCard key={t.id} task={t} onRequestMove={onRequestMove} onEdit={onEdit} onDelete={onDelete} />)}
+          {tasks.map((t) => <SortableCard key={t.id} task={t} canReview={canReview} onRequestMove={onRequestMove} onEdit={onEdit} onDelete={onDelete} />)}
           {tasks.length === 0 && <p className="py-10 text-center text-xs text-muted-foreground">Kéo task vào đây</p>}
         </div>
       </SortableContext>
@@ -141,8 +143,9 @@ function Column({ status, tasks, onRequestMove, onEdit, onDelete }: {
   )
 }
 
-export function TaskKanban({ tasks, onRequestMove, onEdit, onDelete }: {
+export function TaskKanban({ tasks, canReview, onRequestMove, onEdit, onDelete }: {
   tasks: TaskItem[]
+  canReview: boolean
   onRequestMove: (taskId: string, from: TaskStatusType, to: TaskStatusType) => void
   onEdit: (id: string) => void
   onDelete: (id: string) => void
@@ -181,7 +184,7 @@ export function TaskKanban({ tasks, onRequestMove, onEdit, onDelete }: {
       <div className="w-full overflow-x-auto overflow-y-hidden pb-2">
         <div className="flex w-max gap-2.5 pr-1">
           {grouped.map(({ status, tasks: colTasks }) => (
-            <Column key={status} status={status} tasks={colTasks} onRequestMove={onRequestMove} onEdit={onEdit} onDelete={onDelete} />
+            <Column key={status} status={status} tasks={colTasks} canReview={canReview} onRequestMove={onRequestMove} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </div>
       </div>
