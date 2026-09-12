@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Plus, Search, UserPlus, Users } from "lucide-react"
+import { Plus, Search, SlidersHorizontal, UserPlus, Users, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -97,6 +97,7 @@ export function TasksPageContent() {
   const [membersOpen, setMembersOpen] = useState(false)
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null)
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [filtersOpen, setFiltersOpen] = useState(false)
 
   const queryFilters: TaskFilters = { ...filters, page, pageSize: 50 }
   const hasProject = !!filters.projectId
@@ -108,6 +109,9 @@ export function TasksPageContent() {
   const currentUserId = (session?.user as { id?: string } | undefined)?.id
   const selectedProject = (projectsQ.data?.data ?? []).find((p) => p.id === filters.projectId)
   const canInvite = role === "ADMIN" || (!!selectedProject && !!currentUserId && selectedProject.ownerId === currentUserId)
+  // Quyền NGHIỆM THU (leader): ADMIN/MANAGER toàn cục hoặc chủ sở hữu project.
+  // Thành viên tạo task không được tự nghiệm thu.
+  const canReview = role === "ADMIN" || role === "MANAGER" || (!!selectedProject && !!currentUserId && selectedProject.ownerId === currentUserId)
   const memberCount = (() => {
     if (!filters.projectId) return null
     const ids = new Set((membersQ.data?.data ?? []).map((m) => m.userId))
@@ -179,7 +183,7 @@ export function TasksPageContent() {
       </div>
 
       {/* Sticky toolbar: actions + filters, ghim ngay dưới header */}
-      <div className="sticky top-16 z-10 -mx-4 border-y bg-background/95 px-4 py-3 backdrop-blur-md md:-mx-6 md:px-6">
+      <div className="sticky top-16 z-10 -mx-4 border-y bg-card px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:-mx-6 md:px-6">
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
             <Button
@@ -219,7 +223,7 @@ export function TasksPageContent() {
             <Button size="sm" variant={view === "list" ? "secondary" : "ghost"} onClick={() => setView("list")}>Danh sách</Button>
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-3 hidden flex-wrap items-center gap-2 md:flex">
           <div className="flex gap-2">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -249,6 +253,51 @@ export function TasksPageContent() {
           <Button variant="ghost" size="sm" onClick={() => { setFilters(filters.projectId ? { projectId: filters.projectId } : {}); setSearchInput(""); setPage(1) }}>Xóa lọc</Button>
         )}
       </div>
+      <div className="mt-3 flex gap-2 md:hidden">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Tìm theo tiêu đề..." value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && applySearch()} className="w-full pl-9" />
+        </div>
+        <Button variant="outline" onClick={applySearch}>Tìm</Button>
+        <Button
+          variant="outline"
+          onClick={() => setFiltersOpen((v) => !v)}
+          aria-label="Bộ lọc"
+          aria-expanded={filtersOpen}
+          className="shrink-0 gap-1.5"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          Lọc
+        </Button>
+      </div>
+      {filtersOpen && (
+        <div className="mt-3 grid grid-cols-1 gap-2 md:hidden">
+          <Select value={filters.projectId ?? ""} onValueChange={(v) => { setFilters((f) => ({ ...f, projectId: v })); setPage(1) }}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="Chọn project" /></SelectTrigger>
+            <SelectContent>{(projectsQ.data?.data ?? []).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+          </Select>
+          <Select value={filters.status ?? NONE} onValueChange={(v) => { setFilters((f) => ({ ...f, status: v === NONE ? undefined : v })); setPage(1) }}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="Trạng thái" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>Tất cả trạng thái</SelectItem>
+              <SelectItem value="PENDING_APPROVAL">Chờ duyệt</SelectItem><SelectItem value="TODO">Cần làm</SelectItem><SelectItem value="IN_PROGRESS">Đang làm</SelectItem><SelectItem value="PENDING_ACCEPTANCE">Chờ nghiệm thu</SelectItem><SelectItem value="DONE">Hoàn thành</SelectItem><SelectItem value="REJECTED">Bị từ chối</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filters.priority ?? NONE} onValueChange={(v) => { setFilters((f) => ({ ...f, priority: v === NONE ? undefined : v })); setPage(1) }}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="Ưu tiên" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>Tất cả</SelectItem>
+              <SelectItem value="LOW">Thấp</SelectItem><SelectItem value="MEDIUM">Trung bình</SelectItem><SelectItem value="HIGH">Cao</SelectItem><SelectItem value="URGENT">Khẩn cấp</SelectItem>
+            </SelectContent>
+          </Select>
+          {(filters.search || filters.status || filters.priority || filters.projectId) && (
+            <Button variant="ghost" size="sm" onClick={() => { setFilters(filters.projectId ? { projectId: filters.projectId } : {}); setSearchInput(""); setPage(1) }} className="justify-start gap-1.5">
+              <X className="h-4 w-4" />
+              Xóa lọc
+            </Button>
+          )}
+        </div>
+      )}
     </div>
 
       {!hasProject ? (
@@ -259,7 +308,7 @@ export function TasksPageContent() {
       ) : isLoading ? (
         <div className="space-y-2"><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /></div>
       ) : view === "kanban" ? (
-        <TaskKanban tasks={data?.data ?? []} onRequestMove={requestMove} onEdit={(id) => { setEditingId(id); setDialogOpen(true) }} onDelete={(id) => setPendingDeleteId(id)} />
+        <TaskKanban tasks={data?.data ?? []} canReview={canReview} onRequestMove={requestMove} onEdit={(id) => { setEditingId(id); setDialogOpen(true) }} onDelete={(id) => setPendingDeleteId(id)} />
       ) : (
         <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
           <Table>

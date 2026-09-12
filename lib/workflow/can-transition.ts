@@ -5,6 +5,9 @@ type TransitionTask = WorkflowInput & {
   status: TaskStatusType
   isDraft: boolean
   pendingApproval: boolean
+  // Chủ sở hữu project (leader) — người có quyền nghiệm thu. Optional để
+  // không phá các lời gọi cũ; thiếu thì chỉ MANAGER/ADMIN còn quyền review.
+  projectOwnerId?: string | null
 }
 
 type TransitionUser = {
@@ -46,6 +49,11 @@ export function canTransition(
   const isAssignee = user.id === task.assigneeId
   const isExecutor = user.id === task.executorId
   const isManager = user.role === "MANAGER"
+  // Leader của project = chủ sở hữu. Đây mới là người có quyền NGHIỆM THU,
+  // KHÔNG phải creator (tránh MEMBER tạo task rồi tự nghiệm thu task mình làm).
+  const isProjectOwner = user.id === task.projectOwnerId
+  // Người review ở cổng nghiệm thu: chủ project (leader) hoặc MANAGER toàn cục.
+  const canReview = isProjectOwner || isManager
 
   switch (targetStatus) {
     // Duyệt khởi đầu (PENDING_APPROVAL → TODO): người tạo / người được giao / MANAGER
@@ -62,24 +70,24 @@ export function canTransition(
     case "IN_PROGRESS":
       if (task.status === "TODO") return isExecutor || isAssignee
       // Trả về làm lại (PENDING_ACCEPTANCE → IN_PROGRESS): người review
-      if (task.status === "PENDING_ACCEPTANCE") return isCreator || isManager
+      if (task.status === "PENDING_ACCEPTANCE") return canReview
       // Mở lại sau hoàn thành (DONE → IN_PROGRESS): người review
-      return isCreator || isManager
+      return canReview
 
     // Gửi nghiệm thu (IN_PROGRESS → PENDING_ACCEPTANCE): người làm / người tạo
     case "PENDING_ACCEPTANCE":
       return isExecutor || isAssignee || isCreator
 
-    // Nghiệm thu hoàn thành (PENDING_ACCEPTANCE → DONE): người review
+    // Nghiệm thu hoàn thành (PENDING_ACCEPTANCE → DONE): chỉ leader (chủ project) / MANAGER
     case "DONE":
-      return isCreator || isManager
+      return canReview
 
     // Từ chối — chỉ ở 2 cổng phê duyệt:
     //  - PENDING_APPROVAL → REJECTED: người duyệt (creator / assignee / MANAGER)
-    //  - PENDING_ACCEPTANCE → REJECTED: người nghiệm thu (creator / MANAGER)
+    //  - PENDING_ACCEPTANCE → REJECTED: người nghiệm thu (leader / MANAGER)
     case "REJECTED":
       if (task.status === "PENDING_APPROVAL") return isCreator || isAssignee || isManager
-      if (task.status === "PENDING_ACCEPTANCE") return isCreator || isManager
+      if (task.status === "PENDING_ACCEPTANCE") return canReview
       return false
   }
 

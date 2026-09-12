@@ -14,8 +14,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const targetStatus = parsedTR.data.status
   const reasonRaw = parsedTR.data.reason?.trim() ?? ""
 
-  const task = await db.task.findUnique({ where: { id: params.id } })
+  const task = await db.task.findUnique({ where: { id: params.id }, include: { project: { select: { ownerId: true } } } })
   if (!task) return notFound()
+  const projectOwnerId = (task as unknown as { project?: { ownerId: string } | null }).project?.ownerId ?? null
 
   // Guard: task bị đóng băng khi assignee hoặc executor đã bị vô hiệu hóa
   {
@@ -53,6 +54,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       status: task.status as never,
       isDraft: task.isDraft,
       pendingApproval: task.pendingApproval,
+      projectOwnerId,
     },
     { id: user.id, role: user.role },
     targetStatus as never,

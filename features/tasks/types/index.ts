@@ -29,7 +29,7 @@ export type TaskItem = {
   creator?: { id: string; name: string | null; email: string }
   assignee?: { id: string; name: string | null; email: string; isActive?: boolean } | null
   executor?: { id: string; name: string | null; email: string; isActive?: boolean } | null
-  project?: { id: string; name: string }
+  project?: { id: string; name: string; ownerId?: string }
   transitions?: TaskTransitionItem[]
 }
 

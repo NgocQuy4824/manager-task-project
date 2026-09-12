@@ -1299,6 +1299,7 @@ export async function loadTasks(
           select: {
             id: true,
             name: true,
+            ownerId: true,
           },
         })
       : []
