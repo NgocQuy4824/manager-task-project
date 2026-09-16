@@ -11,7 +11,6 @@ import Link from "next/link"
 
 import {
   LogOut,
-  User,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
