@@ -5,6 +5,8 @@ import "./globals.css"
 import { Providers } from "@/components/providers"
 import { Toaster } from "sonner"
 
+export const dynamic = "force-dynamic"
+
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
