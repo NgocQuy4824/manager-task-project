@@ -8,6 +8,8 @@ import {
 
 import { loadStats } from "@/lib/server/loaders"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(req: Request) {
   try {
     const user = await getSession()
