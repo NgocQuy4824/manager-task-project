@@ -106,7 +106,7 @@ export function ProjectForm({ projectId }: { projectId?: string }) {
               </Button>
               <Button type="submit" disabled={pending} className="gap-1.5 shadow-soft">
                 {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-                {pending ? "..." : isEdit ? "Lưu thay đổi" : "Tạo project"}
+                {isEdit ? "Lưu thay đổi" : pending ? "Đang tạo..." : "Tạo project"}
               </Button>
             </div>
           </form>

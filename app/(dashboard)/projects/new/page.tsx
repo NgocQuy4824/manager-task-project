@@ -1,5 +1,5 @@
-import { ProjectForm } from "@/features/projects/components/project-form"
+import { redirect } from "next/navigation"
 
 export default function NewProjectPage() {
-  return <ProjectForm />
+  redirect("/projects")
 }

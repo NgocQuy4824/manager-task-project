@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useProject, useProjectMembers, useAddMember, useRemoveMember } from "@/features/projects/hooks/use-projects"
 import { useUsers } from "@/features/users/hooks/use-users"
 import { ProjectAvatar } from "@/features/projects/components/project-avatar"
+import { ProjectDialog } from "@/features/projects/components/project-dialog"
 import { ROLES, ROLE_LABELS, type RoleType } from "@/lib/constants"
 
 function memberInitial(name: string | null | undefined, email: string): string {
@@ -35,6 +36,7 @@ export function ProjectDetailContent({ projectId }: { projectId: string }) {
   const [selectedRole, setSelectedRole] = useState<RoleType>("MEMBER")
   const [err, setErr] = useState<string | null>(null)
   const [pendingRemoveUserId, setPendingRemoveUserId] = useState<string | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
 
   // Chỉ chủ sở hữu project / ADMIN toàn cục mới được mời thành viên.
   const isOwnerOrGlobalAdmin = role === "ADMIN" || (!!currentUserId && data?.data?.ownerId === currentUserId)
@@ -88,11 +90,9 @@ export function ProjectDetailContent({ projectId }: { projectId: string }) {
             </div>
           </div>
         </div>
-        <Button asChild variant="outline" className="gap-1.5 shadow-soft">
-          <Link href={`/projects/${projectId}/edit`}>
-            <Pencil className="h-3.5 w-3.5" />
-            Sửa
-          </Link>
+        <Button variant="outline" className="gap-1.5 shadow-soft" onClick={() => setEditOpen(true)}>
+          <Pencil className="h-3.5 w-3.5" />
+          Sửa
         </Button>
       </div>
 
@@ -225,6 +225,7 @@ export function ProjectDetailContent({ projectId }: { projectId: string }) {
           removeMut.mutate(pendingRemoveUserId, { onSuccess: () => setPendingRemoveUserId(null) })
         }}
       />
+      <ProjectDialog open={editOpen} onOpenChange={setEditOpen} projectId={editOpen ? projectId : null} />
     </div>
   )
 }

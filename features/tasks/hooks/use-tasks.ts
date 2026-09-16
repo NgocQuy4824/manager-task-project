@@ -7,11 +7,11 @@ import type { TaskStatusType } from "@/lib/constants"
 import type { TasksResponse, TaskItem, TaskFilters } from "@/features/tasks/types"
 
 function transitionMessage(from: string, to: string): string {
-  if (from === "PENDING_APPROVAL" && to === "TODO") return "Đã duyệt task"
+  if (from === "PENDING_APPROVAL" && to === "TODO") return "Đã phê duyệt, giao việc"
   if (to === "IN_PROGRESS" && from === "PENDING_ACCEPTANCE") return "Đã trả về Đang làm"
   if (to === "IN_PROGRESS" && from === "DONE") return "Đã mở lại task"
-  if (to === "DONE") return "Đã nghiệm thu hoàn thành"
-  if (to === "PENDING_ACCEPTANCE") return "Đã gửi nghiệm thu"
+  if (to === "DONE") return "Đã kết thúc task"
+  if (to === "PENDING_ACCEPTANCE") return "Đã báo Hoàn thành, chờ nghiệm thu"
   if (to === "IN_PROGRESS") return "Đã bắt đầu làm"
   if (to === "TODO") return "Đã đưa về Cần làm"
   if (to === "REJECTED") return "Đã từ chối task"
@@ -108,6 +108,23 @@ function applyOptimisticTransition(t: TaskItem, to: string, reason?: string): Ta
     else next.reviewNote = null
   }
   return next
+}
+
+export function usePublishTask() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/tasks/${id}/publish`, { method: "POST" })
+      const json = await res.json()
+      if (!res.ok) throw json
+      return json as { data: TaskItem }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tasks"] })
+      toast.success("Đã giao việc")
+    },
+    onError: (e: unknown) => toast.fromError(e, "Không thể giao việc"),
+  })
 }
 
 export function useTransitionTask() {

@@ -1091,6 +1091,15 @@ export async function loadTasks(
       q.pendingApproval
   }
 
+  // "Chờ tôi phê duyệt" — task đang trình duyệt mà tôi là người giao.
+  if (q.myApproval) {
+    where.status =
+      "PENDING_APPROVAL"
+
+    where.assigneeId =
+      user.id
+  }
+
   if (q.search) {
     where.title = {
       contains: q.search,
@@ -1104,6 +1113,9 @@ export async function loadTasks(
   let allowedProjectIds:
     | string[]
     | null = null
+
+  // Project user này LÀM CHỦ — dùng cho quy tắc ẩn nháp/chờ-duyệt bên dưới.
+  let ownedProjectIds: string[] = []
 
   if (user.role !== "ADMIN") {
     const projects =
@@ -1128,6 +1140,7 @@ export async function loadTasks(
 
         select: {
           id: true,
+          ownerId: true,
         },
       })
 
@@ -1136,6 +1149,17 @@ export async function loadTasks(
         (project) =>
           project.id
       )
+
+    ownedProjectIds =
+      projects
+        .filter(
+          (project) =>
+            project.ownerId === user.id
+        )
+        .map(
+          (project) =>
+            project.id
+        )
 
     /*
      * User không có quyền
@@ -1184,6 +1208,50 @@ export async function loadTasks(
         in: allowedProjectIds,
       }
     }
+  }
+
+  /* -------------------------
+     NHẠY CẢM: ẩn nháp + giới hạn task chờ
+     duyệt khỏi người không liên quan
+     (rule "Lưu ≠ Giao việc").
+     - Task công khai (không nháp, không chờ duyệt): ai cũng thấy.
+     - Task nháp: chỉ creator hoặc chủ project — người được giao
+       CHƯA thấy cho tới khi creator bấm "Giao việc".
+     - Task chờ duyệt: creator, assignee (người duyệt) hoặc chủ project.
+     ADMIN thấy hết. Bỏ qua khi client lọc tường minh theo
+     status/pendingApproval — đó là hàng đợi của người duyệt.
+  ------------------------- */
+
+  if (user.role !== "ADMIN" && !q.status && q.pendingApproval === undefined) {
+    where.AND = [
+      {
+        OR: [
+          {
+            isDraft: false,
+
+            status: {
+              not: "PENDING_APPROVAL",
+            },
+          },
+
+          {
+            creatorId: user.id,
+          },
+
+          {
+            isDraft: false,
+
+            assigneeId: user.id,
+          },
+
+          {
+            projectId: {
+              in: ownedProjectIds,
+            },
+          },
+        ],
+      },
+    ]
   }
 
   /* =====================================================

@@ -12,10 +12,39 @@ import {
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/", label: "Bảng điều khiển", icon: LayoutDashboard },
-  { href: "/projects", label: "Dự án", icon: FolderKanban },
-  { href: "/tasks", label: "Công việc", icon: ListChecks },
-  { href: "/users", label: "Người dùng", icon: Users },
+  {
+    href: "/",
+    label: "Bảng điều khiển",
+    icon: LayoutDashboard,
+    // Tông màu riêng cho từng mục: icon mặc định + nền icon khi hover
+    iconColor: "text-violet-500 dark:text-violet-400",
+    hoverBg: "group-hover:bg-violet-500/10",
+    bar: "bg-violet-500",
+  },
+  {
+    href: "/projects",
+    label: "Dự án",
+    icon: FolderKanban,
+    iconColor: "text-blue-500 dark:text-blue-400",
+    hoverBg: "group-hover:bg-blue-500/10",
+    bar: "bg-blue-500",
+  },
+  {
+    href: "/tasks",
+    label: "Công việc",
+    icon: ListChecks,
+    iconColor: "text-emerald-500 dark:text-emerald-400",
+    hoverBg: "group-hover:bg-emerald-500/10",
+    bar: "bg-emerald-500",
+  },
+  {
+    href: "/users",
+    label: "Người dùng",
+    icon: Users,
+    iconColor: "text-amber-500 dark:text-amber-400",
+    hoverBg: "group-hover:bg-amber-500/10",
+    bar: "bg-amber-500",
+  },
 ]
 
 function isActive(pathname: string, href: string) {
@@ -54,18 +83,38 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                 active
                   ? "bg-primary text-primary-foreground shadow-soft"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
               )}
             >
-              <Icon
+              {/* Gạch màu bên trái khi đang chọn */}
+              {active && (
+                <span
+                  className={cn(
+                    "absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full",
+                    item.bar,
+                  )}
+                />
+              )}
+              {/* Icon trong ô màu, đổi màu theo mục */}
+              <span
                 className={cn(
-                  "h-[18px] w-[18px] shrink-0",
-                  active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-accent-foreground",
+                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors",
+                  item.hoverBg,
+                  active ? "bg-primary-foreground/15" : "",
                 )}
-              />
+              >
+                <Icon
+                  className={cn(
+                    "h-[18px] w-[18px] shrink-0 transition-colors",
+                    active
+                      ? "text-primary-foreground"
+                      : cn(item.iconColor, "group-hover:scale-110"),
+                  )}
+                />
+              </span>
               {item.label}
             </Link>
           )

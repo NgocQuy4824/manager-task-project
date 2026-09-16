@@ -1,4 +1,5 @@
 import { db } from "@/lib/db"
+import type { TaskStatusType } from "@/lib/constants"
 
 const LEADER_ROLES = ["ADMIN", "MANAGER"] as const
 
@@ -29,4 +30,31 @@ export async function validateTaskAssignment(
     }
   }
   return null
+}
+
+/**
+ * Suy diễn trạng thái khởi tạo của task từ intent + quan hệ creator/assignee/executor.
+ * Nguồn sự thật duy nhất cho rule "Lưu ≠ Giao việc" và 3 luồng nghiệp vụ:
+ * - "draft" (Lưu nháp) → nháp, người thực hiện chưa thấy.
+ * - "assign" + assignee trùng executor (Luồng 3: tự giao tự làm) → TODO ngay.
+ * - "assign" + có assignee khác creator (Luồng 1) → PENDING_APPROVAL trình người giao.
+ * - "assign" còn lại — không assignee, hoặc assignee chính là creator (Luồng 2) →
+ *   TODO ngay (creator đồng thời là người duyệt nên giao trực tiếp được).
+ */
+export function deriveCreateStatus(
+  input: { intent?: "draft" | "assign"; assigneeId?: string | null; executorId?: string | null },
+  creatorId: string,
+): { status: TaskStatusType; isDraft: boolean; pendingApproval: boolean } {
+  if (input.intent === "draft") {
+    return { status: "TODO", isDraft: true, pendingApproval: false }
+  }
+  const assigneeId = input.assigneeId ?? null
+  const executorId = input.executorId ?? null
+  if (assigneeId && executorId && assigneeId === executorId) {
+    return { status: "TODO", isDraft: false, pendingApproval: false }
+  }
+  if (assigneeId && assigneeId !== creatorId) {
+    return { status: "PENDING_APPROVAL", isDraft: false, pendingApproval: true }
+  }
+  return { status: "TODO", isDraft: false, pendingApproval: false }
 }

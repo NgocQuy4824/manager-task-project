@@ -5,7 +5,7 @@ import { loadTasks } from "@/lib/server/loaders"
 import { createTaskSchema, taskQuerySchema } from "@/lib/validations/task"
 import { canAccessProject } from "@/lib/server-auth"
 import { db } from "@/lib/db"
-import { validateTaskAssignment } from "@/lib/server/task-assignment"
+import { validateTaskAssignment, deriveCreateStatus } from "@/lib/server/task-assignment"
 
 export async function GET(req: Request) {
   const user = await getSession()
@@ -40,14 +40,25 @@ export async function POST(req: Request) {
   })
   if (assignmentErr) return NextResponse.json({ error: assignmentErr.message }, { status: 422 })
 
+  // Server suy diễn trạng thái khởi tạo — client không được tự chọn (Lưu ≠ Giao việc, 3 luồng).
+  const derived = deriveCreateStatus(
+    {
+      intent: parsed.data.intent,
+      assigneeId: parsed.data.assigneeId ?? null,
+      executorId: parsed.data.executorId ?? null,
+    },
+    user.id,
+  )
+
   const task = await db.task.create({
     data: {
       title: parsed.data.title.trim(),
       description: parsed.data.description ?? null,
-      status: parsed.data.status as never,
+      status: derived.status as never,
       priority: parsed.data.priority as never,
       dueDate: parsed.data.dueDate ?? null,
-      isDraft: parsed.data.isDraft ?? false,
+      isDraft: derived.isDraft,
+      pendingApproval: derived.pendingApproval,
       projectId: parsed.data.projectId,
       creatorId: user.id,
       assigneeId: parsed.data.assigneeId ?? null,
@@ -60,7 +71,7 @@ export async function POST(req: Request) {
     data: {
       taskId: task.id,
       from: null,
-      to: parsed.data.status as never,
+      to: derived.status as never,
       actorId: user.id,
       reason: null,
     },

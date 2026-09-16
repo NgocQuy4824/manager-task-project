@@ -59,16 +59,16 @@ function moveCopy(from: TaskStatusType, to: TaskStatusType): { title: string; de
     confirmLabel: "Xác nhận chuyển",
     requireReason: false,
   }
-  if (from === "PENDING_APPROVAL" && to === "TODO") return { ...base, title: "Duyệt task", description: "Đưa task từ Chờ duyệt sang Cần làm.", confirmLabel: "Xác nhận duyệt" }
+  if (from === "PENDING_APPROVAL" && to === "TODO") return { ...base, title: "Phê duyệt / Giao việc", description: "Đưa task từ Chờ duyệt sang Cần làm để người thực hiện bắt đầu.", confirmLabel: "Xác nhận phê duyệt" }
   if (from === "PENDING_ACCEPTANCE" && to === "IN_PROGRESS") return { ...base, title: "Trả về Đang làm", description: "Trả task về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Gửi yêu cầu", requireReason: true }
-  if (from === "DONE" && to === "IN_PROGRESS") return { ...base, title: "Mở lại Đang làm", description: "Mở lại task từ Hoàn thành về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Xác nhận mở lại", requireReason: true }
+  if (from === "DONE" && to === "IN_PROGRESS") return { ...base, title: "Mở lại Đang làm", description: "Mở lại task từ Kết thúc về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Xác nhận mở lại", requireReason: true }
   if (from === "IN_PROGRESS" && to === "TODO") return { ...base, title: "Đưa về Cần làm", description: "Đưa task từ Đang làm trở lại Cần làm.", confirmLabel: "Xác nhận" }
-  if (to === "DONE") return { ...base, title: "Nghiệm thu hoàn thành", description: "Chấp nhận và đưa task sang Hoàn thành.", confirmLabel: "Xác nhận hoàn thành" }
-  if (to === "PENDING_ACCEPTANCE") return { ...base, title: "Gửi nghiệm thu", description: "Đưa task sang Chờ nghiệm thu để người review xử lý.", confirmLabel: "Xác nhận gửi" }
+  if (to === "DONE") return { ...base, title: "Kết thúc task", description: "Nghiệm thu đạt và đưa task sang Kết thúc.", confirmLabel: "Xác nhận kết thúc" }
+  if (to === "PENDING_ACCEPTANCE") return { ...base, title: "Báo Hoàn thành", description: "Đưa task sang Hoàn thành để người giao việc kiểm tra, nghiệm thu.", confirmLabel: "Xác nhận báo hoàn thành" }
   if (from === "REJECTED" && to === "TODO") return { ...base, title: "Làm lại", description: "Đưa task từ Bị từ chối trở lại Cần làm.", confirmLabel: "Xác nhận làm lại" }
   if (to === "REJECTED") {
     if (from === "PENDING_APPROVAL") return { ...base, title: "Từ chối task", description: "Từ chối task đang chờ duyệt. Task sẽ sang Bị từ chối.", confirmLabel: "Từ chối", requireReason: true }
-    if (from === "PENDING_ACCEPTANCE") return { ...base, title: "Từ chối nghiệm thu", description: "Từ chối nghiệm thu — Task sẽ sang Bị từ chối.", confirmLabel: "Từ chối", requireReason: true }
+    if (from === "PENDING_ACCEPTANCE") return { ...base, title: "Từ chối nghiệm thu", description: "Nghiệm thu không đạt — Task sẽ sang Bị từ chối.", confirmLabel: "Từ chối", requireReason: true }
     return { ...base, title: "Từ chối", description: "Từ chối task.", confirmLabel: "Từ chối", requireReason: true }
   }
   return base
@@ -109,8 +109,9 @@ export function TasksPageContent() {
   const currentUserId = (session?.user as { id?: string } | undefined)?.id
   const selectedProject = (projectsQ.data?.data ?? []).find((p) => p.id === filters.projectId)
   const canInvite = role === "ADMIN" || (!!selectedProject && !!currentUserId && selectedProject.ownerId === currentUserId)
-  // Quyền NGHIỆM THU (leader): ADMIN/MANAGER toàn cục hoặc chủ sở hữu project.
-  // Thành viên tạo task không được tự nghiệm thu.
+  // Quyền review ở cổng nghiệm thu = người giao việc (của task) / leader / MANAGER / ADMIN.
+  // Quyền cấp project/global dùng để render nhanh; task nào có assignee là mình
+  // thì kanban vẫn hiện nút Kết thúc nhờ currentUserId (server kiểm tra cuối).
   const canReview = role === "ADMIN" || role === "MANAGER" || (!!selectedProject && !!currentUserId && selectedProject.ownerId === currentUserId)
   const memberCount = (() => {
     if (!filters.projectId) return null
@@ -235,14 +236,14 @@ export function TasksPageContent() {
           <SelectTrigger className="w-44"><SelectValue placeholder="Chọn project" /></SelectTrigger>
           <SelectContent>{(projectsQ.data?.data ?? []).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
         </Select>
-        <Select value={filters.status ?? NONE} onValueChange={(v) => { setFilters((f) => ({ ...f, status: v === NONE ? undefined : v })); setPage(1) }}>
+        <Select value={filters.status ?? NONE} onValueChange={(v) => { setFilters((f) => ({ ...f, status: v === NONE ? undefined : v } as TaskFilters)); setPage(1) }}>
           <SelectTrigger className="w-40"><SelectValue placeholder="Trạng thái" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={NONE}>Tất cả trạng thái</SelectItem>
-            <SelectItem value="PENDING_APPROVAL">Chờ duyệt</SelectItem><SelectItem value="TODO">Cần làm</SelectItem><SelectItem value="IN_PROGRESS">Đang làm</SelectItem><SelectItem value="PENDING_ACCEPTANCE">Chờ nghiệm thu</SelectItem><SelectItem value="DONE">Hoàn thành</SelectItem><SelectItem value="REJECTED">Bị từ chối</SelectItem>
+            <SelectItem value="PENDING_APPROVAL">Chờ duyệt</SelectItem><SelectItem value="TODO">Cần làm</SelectItem><SelectItem value="IN_PROGRESS">Đang làm</SelectItem><SelectItem value="PENDING_ACCEPTANCE">Hoàn thành</SelectItem><SelectItem value="DONE">Kết thúc</SelectItem><SelectItem value="REJECTED">Bị từ chối</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={filters.priority ?? NONE} onValueChange={(v) => { setFilters((f) => ({ ...f, priority: v === NONE ? undefined : v })); setPage(1) }}>
+        <Select value={filters.priority ?? NONE} onValueChange={(v) => { setFilters((f) => ({ ...f, priority: v === NONE ? undefined : v } as TaskFilters)); setPage(1) }}>
           <SelectTrigger className="w-36"><SelectValue placeholder="Ưu tiên" /></SelectTrigger>
           <SelectContent>
             <SelectItem value={NONE}>Tất cả</SelectItem>
@@ -276,14 +277,14 @@ export function TasksPageContent() {
             <SelectTrigger className="w-full"><SelectValue placeholder="Chọn project" /></SelectTrigger>
             <SelectContent>{(projectsQ.data?.data ?? []).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
           </Select>
-          <Select value={filters.status ?? NONE} onValueChange={(v) => { setFilters((f) => ({ ...f, status: v === NONE ? undefined : v })); setPage(1) }}>
+          <Select value={filters.status ?? NONE} onValueChange={(v) => { setFilters((f) => ({ ...f, status: v === NONE ? undefined : v } as TaskFilters)); setPage(1) }}>
             <SelectTrigger className="w-full"><SelectValue placeholder="Trạng thái" /></SelectTrigger>
             <SelectContent>
               <SelectItem value={NONE}>Tất cả trạng thái</SelectItem>
-              <SelectItem value="PENDING_APPROVAL">Chờ duyệt</SelectItem><SelectItem value="TODO">Cần làm</SelectItem><SelectItem value="IN_PROGRESS">Đang làm</SelectItem><SelectItem value="PENDING_ACCEPTANCE">Chờ nghiệm thu</SelectItem><SelectItem value="DONE">Hoàn thành</SelectItem><SelectItem value="REJECTED">Bị từ chối</SelectItem>
+              <SelectItem value="PENDING_APPROVAL">Chờ duyệt</SelectItem><SelectItem value="TODO">Cần làm</SelectItem><SelectItem value="IN_PROGRESS">Đang làm</SelectItem><SelectItem value="PENDING_ACCEPTANCE">Hoàn thành</SelectItem><SelectItem value="DONE">Kết thúc</SelectItem><SelectItem value="REJECTED">Bị từ chối</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={filters.priority ?? NONE} onValueChange={(v) => { setFilters((f) => ({ ...f, priority: v === NONE ? undefined : v })); setPage(1) }}>
+          <Select value={filters.priority ?? NONE} onValueChange={(v) => { setFilters((f) => ({ ...f, priority: v === NONE ? undefined : v } as TaskFilters)); setPage(1) }}>
             <SelectTrigger className="w-full"><SelectValue placeholder="Ưu tiên" /></SelectTrigger>
             <SelectContent>
               <SelectItem value={NONE}>Tất cả</SelectItem>
@@ -308,7 +309,7 @@ export function TasksPageContent() {
       ) : isLoading ? (
         <div className="space-y-2"><Skeleton className="h-20 w-full" /><Skeleton className="h-20 w-full" /></div>
       ) : view === "kanban" ? (
-        <TaskKanban tasks={data?.data ?? []} canReview={canReview} onRequestMove={requestMove} onEdit={(id) => { setEditingId(id); setDialogOpen(true) }} onDelete={(id) => setPendingDeleteId(id)} />
+        <TaskKanban tasks={data?.data ?? []} canReview={canReview} currentUserId={currentUserId} onRequestMove={requestMove} onEdit={(id) => { setEditingId(id); setDialogOpen(true) }} onDelete={(id) => setPendingDeleteId(id)} />
       ) : (
         <div className="overflow-hidden rounded-xl border bg-card shadow-soft">
           <Table>
@@ -317,14 +318,14 @@ export function TasksPageContent() {
               {(data?.data ?? []).length === 0 ? (
                 <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Không có task</TableCell></TableRow>
               ) : (data?.data ?? []).map((t) => (
-                <TableRow key={t.id}>
+                <TableRow key={t.id} className={t.isDraft ? "bg-amber-50/60 dark:bg-amber-950/15" : undefined}>
                   <TableCell className="font-medium"><Link href={`/tasks/${t.id}`} className="hover:underline">{t.title}</Link></TableCell>
                   <TableCell className="text-sm">{t.project?.name ?? "-"}</TableCell>
-                  <TableCell><Badge variant={statusVariant(t.status)}>{TASK_STATUS_LABELS[t.status as TaskStatusType] ?? t.status}</Badge></TableCell>
+                  <TableCell><Badge variant={statusVariant(t.status)}>{TASK_STATUS_LABELS[t.status as TaskStatusType] ?? t.status}</Badge>{t.isDraft && <Badge className="ml-1.5 border border-amber-500 bg-amber-400 font-bold uppercase tracking-wide text-white dark:border-amber-600 dark:bg-amber-600">Nháp</Badge>}</TableCell>
                   <TableCell><Badge variant={priorityVariant(t.priority)}>{TASK_PRIORITY_LABELS[t.priority as TaskPriorityType] ?? t.priority}</Badge></TableCell>
                   <TableCell className="text-sm">{t.dueDate ? new Date(t.dueDate).toLocaleDateString("vi-VN") : "-"}</TableCell>
                   <TableCell className="text-right space-x-1">
-                    {t.status === "PENDING_APPROVAL" && <Button size="sm" variant="secondary" onClick={() => requestMove(t.id, t.status as TaskStatusType, "TODO")}>Duyệt</Button>}
+                    {t.status === "PENDING_APPROVAL" && <Button size="sm" variant="secondary" onClick={() => requestMove(t.id, t.status as TaskStatusType, "TODO")}>Phê duyệt</Button>}
                     <Button size="sm" variant="outline" onClick={() => { setEditingId(t.id); setDialogOpen(true) }}>Sửa</Button>
                     <Button size="sm" variant="ghost" className="text-destructive" disabled={delMut.isPending} onClick={() => setPendingDeleteId(t.id)}>Xóa</Button>
                   </TableCell>

@@ -6,7 +6,11 @@ export const taskPriorityEnum = z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"])
 export const createTaskSchema = z.object({
   title: z.string().min(1, "Tiêu đề không được để trống").max(300),
   description: z.string().max(10000).optional().nullable(),
-  status: taskStatusEnum.default("TODO"),
+  // Trạng thái khởi tạo do server suy diễn từ intent + quan hệ creator/assignee/executor
+  // (Lưu ≠ Giao việc, 3 luồng). Client gửi intent, không được tự chọn status.
+  status: taskStatusEnum.optional(),
+  // "draft" = Lưu nháp (người thực hiện chưa thấy); "assign" = Giao việc chính thức.
+  intent: z.enum(["draft", "assign"]).default("assign"),
   priority: taskPriorityEnum.default("MEDIUM"),
   dueDate: z.coerce.date().optional().nullable(),
   isDraft: z.boolean().default(false),
@@ -37,6 +41,8 @@ export const taskQuerySchema = z.object({
   search: z.string().optional(),
   isDraft: z.coerce.boolean().optional(),
   pendingApproval: z.coerce.boolean().optional(),
+  // Hàng đợi "chờ tôi phê duyệt": task đang PENDING_APPROVAL mà tôi là người giao.
+  myApproval: z.coerce.boolean().optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 })

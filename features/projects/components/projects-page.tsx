@@ -10,11 +10,13 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useProjects, useDeleteProject } from "@/features/projects/hooks/use-projects"
 import { ProjectAvatar } from "@/features/projects/components/project-avatar"
+import { ProjectDialog } from "@/features/projects/components/project-dialog"
 
 export function ProjectsPageContent() {
   const [search, setSearch] = useState("")
   const [q, setQ] = useState("")
   const [page, setPage] = useState(1)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const { data, isLoading } = useProjects({ page, search: q || undefined })
   const delMut = useDeleteProject()
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null)
@@ -26,7 +28,7 @@ export function ProjectsPageContent() {
           <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">Tạo và quản lý các dự án cùng thành viên của bạn.</p>
         </div>
-        <Button asChild className="gap-1.5 shadow-soft"><Link href="/projects/new"><Plus className="h-4 w-4" />Tạo project</Link></Button>
+        <Button className="gap-1.5 shadow-soft" onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4" />Tạo project</Button>
       </div>
 
       <div className="flex gap-2">
@@ -49,7 +51,7 @@ export function ProjectsPageContent() {
             {q ? "Không tìm thấy project khớp với từ khóa. Thử lại với từ khóa khác." : "Tạo project đầu tiên để bắt đầu giao việc và quản lý thành viên."}
           </p>
           {!q && (
-            <Button asChild className="mx-auto mt-5 gap-1.5 shadow-soft"><Link href="/projects/new"><Plus className="h-4 w-4" />Tạo project</Link></Button>
+            <Button className="mx-auto mt-5 gap-1.5 shadow-soft" onClick={() => setDialogOpen(true)}><Plus className="h-4 w-4" />Tạo project</Button>
           )}
         </div>
       ) : (
@@ -102,6 +104,7 @@ export function ProjectsPageContent() {
           delMut.mutate(pendingDelete.id, { onSuccess: () => setPendingDelete(null) })
         }}
       />
+      <ProjectDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   )
 }

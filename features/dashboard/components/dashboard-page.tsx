@@ -360,8 +360,8 @@ export function DashboardPageContent() {
   | 1. Cần làm
   | 2. Đang làm
   | 3. Chờ duyệt
-  | 4. Chờ nghiệm thu
-  | 5. Hoàn thành
+  | 4. Hoàn thành
+  | 5. Kết thúc
   | 6. Từ chối
   |
   | Không dùng .filter() để loại bỏ trạng thái = 0.
@@ -527,7 +527,7 @@ export function DashboardPageContent() {
         {/* DONE */}
 
         <StatCard
-          title="Hoàn thành"
+          title="Kết thúc"
           value={stats.done}
           description={`${stats.completionRate}% tổng số task`}
           icon={CheckCircle2}
@@ -552,12 +552,12 @@ export function DashboardPageContent() {
           iconBg="bg-blue-100"
         />
 
-        {/* PENDING ACCEPTANCE */}
+        {/* PENDING ACCEPTANCE = "Hoàn thành" theo đề bài (executor đã báo xong, chờ nghiệm thu) */}
 
         <StatCard
-          title="Chờ nghiệm thu"
+          title="Hoàn thành"
           value={stats.pendingAcceptance}
-          description="Task chờ xác nhận hoàn thành"
+          description="Task chờ người giao kiểm tra, kết thúc"
           icon={Timer}
           iconClass="text-purple-600"
           iconBg="bg-purple-100"
