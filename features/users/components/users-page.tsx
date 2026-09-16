@@ -47,8 +47,6 @@ import { UserDialog } from "@/features/users/components/user-dialog"
 
 import type { UserListItem } from "@/features/users/types"
 
-import { ROLE_LABELS } from "@/lib/constants"
-
 type Props = {
   currentUserRole: string
 }
