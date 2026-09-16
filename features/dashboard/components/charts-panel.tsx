@@ -36,8 +36,8 @@ export type StatusChartItem = {
 | TODO                = Cần làm
 | IN_PROGRESS         = Đang làm
 | PENDING_APPROVAL    = Chờ duyệt
-| PENDING_ACCEPTANCE  = Chờ nghiệm thu
-| DONE                = Hoàn thành
+| PENDING_ACCEPTANCE  = Hoàn thành
+| DONE                = Kết thúc
 | REJECTED            = Từ chối
 |
 |--------------------------------------------------------------------------

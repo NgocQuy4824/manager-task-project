@@ -12,7 +12,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { ConfirmTransitionDialog } from "@/components/ui/confirm-transition-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TaskDialog } from "@/features/tasks/components/task-dialog"
-import { useTask, useDeleteTask, useTransitionTask } from "@/features/tasks/hooks/use-tasks"
+import { useTask, useDeleteTask, usePublishTask, useTransitionTask } from "@/features/tasks/hooks/use-tasks"
 import { TASK_STATUS_LABELS, TASK_PRIORITY_LABELS } from "@/lib/constants"
 import type { TaskStatusType, TaskPriorityType } from "@/lib/constants"
 import type { TaskTransitionItem } from "@/features/tasks/types"
@@ -44,15 +44,15 @@ type MoveConfig = {
 }
 
 const MOVES: Record<string, MoveConfig> = {
-  approveStart: { title: "Duyệt task", description: "Đưa task từ Chờ duyệt sang Cần làm để bắt đầu thực hiện.", confirmLabel: "Xác nhận duyệt" },
+  approveStart: { title: "Phê duyệt / Giao việc", description: "Đưa task từ Chờ duyệt sang Cần làm để người thực hiện bắt đầu.", confirmLabel: "Xác nhận phê duyệt" },
   startWork: { title: "Bắt đầu làm", description: "Đưa task từ Cần làm sang Đang làm.", confirmLabel: "Xác nhận bắt đầu" },
   backToTodo: { title: "Đưa về Cần làm", description: "Đưa task từ Đang làm trở lại Cần làm.", confirmLabel: "Xác nhận" },
-  submitReview: { title: "Gửi nghiệm thu", description: "Đưa task từ Đang làm sang Chờ nghiệm thu để người review xử lý.", confirmLabel: "Xác nhận gửi" },
-  accept: { title: "Nghiệm thu hoàn thành", description: "Chấp nhận và đưa task sang Hoàn thành.", confirmLabel: "Xác nhận hoàn thành" },
-  rework: { title: "Trả về Đang làm", description: "Trả task từ Chờ nghiệm thu về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Gửi yêu cầu", requireReason: true, reasonLabel: "Lý do trả về *", reasonPlaceholder: "Giải thích vì sao cần làm lại..." },
+  submitReview: { title: "Báo Hoàn thành", description: "Đưa task từ Đang làm sang Hoàn thành để người giao việc kiểm tra, nghiệm thu.", confirmLabel: "Xác nhận báo hoàn thành" },
+  accept: { title: "Kết thúc task", description: "Nghiệm thu đạt và đưa task sang Kết thúc.", confirmLabel: "Xác nhận kết thúc" },
+  rework: { title: "Trả về Đang làm", description: "Trả task từ Hoàn thành về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Gửi yêu cầu", requireReason: true, reasonLabel: "Lý do trả về *", reasonPlaceholder: "Giải thích vì sao cần làm lại..." },
   rejectApproval: { title: "Từ chối task", description: "Từ chối task đang chờ duyệt. Task sẽ sang Bị từ chối.", confirmLabel: "Từ chối", requireReason: true, reasonLabel: "Lý do từ chối *", reasonPlaceholder: "Giải thích vì sao từ chối..." },
-  rejectAcceptance: { title: "Từ chối nghiệm thu", description: "Từ chối nghiệm thu — Task sẽ sang Bị từ chối.", confirmLabel: "Từ chối", requireReason: true, reasonLabel: "Lý do từ chối *", reasonPlaceholder: "Giải thích vì sao từ chối..." },
-  reopen: { title: "Mở lại Đang làm", description: "Mở lại task từ Hoàn thành về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Xác nhận mở lại", requireReason: true, reasonLabel: "Lý do mở lại *", reasonPlaceholder: "Giải thích vì sao cần mở lại..." },
+  rejectAcceptance: { title: "Từ chối nghiệm thu", description: "Nghiệm thu không đạt — Task sẽ sang Bị từ chối.", confirmLabel: "Từ chối", requireReason: true, reasonLabel: "Lý do từ chối *", reasonPlaceholder: "Giải thích vì sao từ chối..." },
+  reopen: { title: "Mở lại Đang làm", description: "Mở lại task từ Kết thúc về Đang làm. Lý do sẽ hiển thị cho người thực hiện.", confirmLabel: "Xác nhận mở lại", requireReason: true, reasonLabel: "Lý do mở lại *", reasonPlaceholder: "Giải thích vì sao cần mở lại..." },
   redo: { title: "Làm lại", description: "Đưa task từ Bị từ chối trở lại Cần làm.", confirmLabel: "Xác nhận làm lại" },
 }
 
@@ -63,6 +63,7 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
   const userId = (session?.user as { id?: string } | undefined)?.id as string | undefined
   const { data, isLoading } = useTask(taskId)
   const delMut = useDeleteTask()
+  const pubMut = usePublishTask()
   const transMut = useTransitionTask()
   const [editOpen, setEditOpen] = useState(false)
   const [move, setMove] = useState<{ key: string; status: TaskStatusType } | null>(null)
@@ -81,27 +82,32 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
   const isAssignee = !!userId && userId === t.assigneeId
   const isExecutor = !!userId && userId === t.executorId
   const isRelated = isCreator || isAssignee || isExecutor
-  // Người review = leader của project (chủ sở hữu) hoặc MANAGER/ADMIN.
-  // Creator KHÔNG tự nghiệm thu được (tránh MEMBER tạo task rồi tự duyệt).
+  // Người review ở cổng nghiệm thu = NGƯỜI GIAO VIỆC (assignee), chủ project (leader)
+  // hoặc MANAGER/ADMIN. Creator KHÔNG tự chốt được.
   const isProjectOwner = !!userId && !!t.project?.ownerId && userId === t.project.ownerId
-  const isReviewer = isAdmin || isManager || isProjectOwner
+  const isReviewer = isAdmin || isManager || isProjectOwner || isAssignee
 
   // Task bị đóng băng khi assignee hoặc executor đã bị vô hiệu hóa
   const assigneeDisabled = t.assignee?.isActive === false
   const executorDisabled = t.executor?.isActive === false
   const frozen = assigneeDisabled || executorDisabled
 
+  // Bản nháp: KHÓA mọi chuyển trạng thái — chỉ creator thấy nút "Giao việc".
+  // (Server cũng chặn ở /transition; nháp phải đi qua /publish.)
+  const isDraft = !!t.isDraft
+  const canPublish = (isCreator || isAdmin) && isDraft && !frozen
+
   // Nút hành động theo ma trận chuyển trạng thái tuyến tính
-  const canApproveStart = (isAdmin || isManager || isCreator || isAssignee) && t.status === "PENDING_APPROVAL"
-  const canStartWork = (isAdmin || isExecutor || isAssignee) && t.status === "TODO"
-  const canBackToTodo = (isAdmin || isExecutor || isAssignee || isCreator || isManager) && t.status === "IN_PROGRESS"
-  const canSubmitReview = (isAdmin || isExecutor || isAssignee || isCreator) && t.status === "IN_PROGRESS"
-  const canAccept = isReviewer && t.status === "PENDING_ACCEPTANCE"
-  const canRework = isReviewer && t.status === "PENDING_ACCEPTANCE"
-  const canRejectApproval = (isAdmin || isManager || isCreator || isAssignee) && t.status === "PENDING_APPROVAL"
-  const canRejectAcceptance = isReviewer && t.status === "PENDING_ACCEPTANCE"
-  const canReopen = isReviewer && t.status === "DONE"
-  const canRedo = (isRelated || isAdmin) && t.status === "REJECTED"
+  const canApproveStart = !isDraft && (isAdmin || isManager || isCreator || isAssignee) && t.status === "PENDING_APPROVAL"
+  const canStartWork = !isDraft && (isAdmin || isExecutor || isAssignee) && t.status === "TODO"
+  const canBackToTodo = !isDraft && (isAdmin || isExecutor || isAssignee || isCreator || isManager) && t.status === "IN_PROGRESS"
+  const canSubmitReview = !isDraft && (isAdmin || isExecutor || isAssignee || isCreator) && t.status === "IN_PROGRESS"
+  const canAccept = !isDraft && isReviewer && t.status === "PENDING_ACCEPTANCE"
+  const canRework = !isDraft && isReviewer && t.status === "PENDING_ACCEPTANCE"
+  const canRejectApproval = !isDraft && (isAdmin || isManager || isCreator || isAssignee) && t.status === "PENDING_APPROVAL"
+  const canRejectAcceptance = !isDraft && isReviewer && t.status === "PENDING_ACCEPTANCE"
+  const canReopen = !isDraft && isReviewer && t.status === "DONE"
+  const canRedo = !isDraft && (isRelated || isAdmin) && t.status === "REJECTED"
 
   const showAwaitingBanner = t.status === "PENDING_ACCEPTANCE"
   const showReviewNote = (t.status === "IN_PROGRESS" || t.status === "REJECTED") && !!t.reviewNote
@@ -139,6 +145,16 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
     delMut.mutate(t!.id, { onSuccess: () => router.push("/tasks") })
   }
 
+  async function handlePublish() {
+    setActionErr(null)
+    try {
+      await pubMut.mutateAsync(t!.id)
+    } catch (e: unknown) {
+      const msg = (e as { error?: string })?.error ?? (e as { message?: string })?.message ?? "Không thể giao việc"
+      setActionErr(typeof msg === "string" ? msg : JSON.stringify(msg))
+    }
+  }
+
   const transitions: TaskTransitionItem[] = t.transitions ?? []
   const activeMoveCfg = move ? MOVES[move.key] : null
 
@@ -146,7 +162,10 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 animate-fade-in-up">
         <div className="min-w-0">
-          <h1 className="break-words text-2xl font-bold tracking-tight">{t.title}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="break-words text-2xl font-bold tracking-tight">{t.title}</h1>
+            {isDraft && <Badge className="border border-amber-500 bg-amber-400 font-bold uppercase tracking-wide text-white dark:border-amber-600 dark:bg-amber-600">Nháp</Badge>}
+          </div>
           {t.project && <Link href={`/projects/${t.project.id}`} className="text-sm text-muted-foreground hover:underline">{t.project.name}</Link>}
         </div>
         <div className="flex shrink-0 gap-2">
@@ -157,8 +176,8 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
 
       {showAwaitingBanner && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-          <span className="font-semibold">Đang chờ nghiệm thu.</span> Task này đã được gửi để review.
-          {isReviewer && <span className="ml-2">Bạn có thể nghiệm thu hoàn thành hoặc trả về Đang làm bên dưới.</span>}
+          <span className="font-semibold">Người thực hiện đã báo Hoàn thành.</span> Task đang chờ người giao việc kiểm tra, nghiệm thu.
+          {isReviewer && <span className="ml-2">Bạn có thể bấm Kết thúc hoặc trả về Đang làm bên dưới.</span>}
         </div>
       )}
 
@@ -169,6 +188,12 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
             <p className="whitespace-pre-wrap text-sm">{t.reviewNote}</p>
           </CardContent>
         </Card>
+      )}
+
+      {isDraft && !frozen && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
+          <span className="font-semibold">Task đang là bản nháp</span> — chỉ mình bạn (và chủ project / ADMIN) thấy được. Bấm «Giao việc» để gửi chính thức; khi đó người được giao / người thực hiện mới nhìn thấy task.
+        </div>
       )}
 
       {frozen && (
@@ -184,17 +209,21 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
         <CardContent className="space-y-3">
           {actionErr && <p className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">{actionErr}</p>}
           <div className="flex flex-wrap gap-2">
-            {canApproveStart && <Button onClick={() => openMove("approveStart", "TODO")} disabled={transMut.isPending || frozen}>Duyệt để bắt đầu</Button>}
+            {canPublish && <Button onClick={handlePublish} disabled={pubMut.isPending}>Giao việc</Button>}
+            {canApproveStart && <Button onClick={() => openMove("approveStart", "TODO")} disabled={transMut.isPending || frozen}>Phê duyệt / Giao việc</Button>}
             {canStartWork && <Button onClick={() => openMove("startWork", "IN_PROGRESS")} disabled={transMut.isPending || frozen}>Bắt đầu làm</Button>}
             {canBackToTodo && <Button variant="outline" onClick={() => openMove("backToTodo", "TODO")} disabled={transMut.isPending || frozen}>Đưa về Cần làm</Button>}
-            {canSubmitReview && <Button onClick={() => openMove("submitReview", "PENDING_ACCEPTANCE")} disabled={transMut.isPending || frozen}>Gửi nghiệm thu</Button>}
-            {canAccept && <Button onClick={() => openMove("accept", "DONE")} disabled={transMut.isPending || frozen}>Nghiệm thu hoàn thành</Button>}
+            {canSubmitReview && <Button onClick={() => openMove("submitReview", "PENDING_ACCEPTANCE")} disabled={transMut.isPending || frozen}>Báo Hoàn thành</Button>}
+            {canAccept && <Button onClick={() => openMove("accept", "DONE")} disabled={transMut.isPending || frozen}>Kết thúc</Button>}
             {canRework && <Button variant="outline" onClick={() => openMove("rework", "IN_PROGRESS")} disabled={transMut.isPending || frozen}>Trả về Đang làm</Button>}
             {canRejectApproval && <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => openMove("rejectApproval", "REJECTED")} disabled={transMut.isPending || frozen}>Từ chối</Button>}
             {canRejectAcceptance && <Button variant="outline" className="text-destructive hover:text-destructive" onClick={() => openMove("rejectAcceptance", "REJECTED")} disabled={transMut.isPending || frozen}>Từ chối</Button>}
             {canReopen && <Button variant="outline" onClick={() => openMove("reopen", "IN_PROGRESS")} disabled={transMut.isPending || frozen}>Mở lại Đang làm</Button>}
             {canRedo && <Button variant="outline" onClick={() => openMove("redo", "TODO")} disabled={transMut.isPending || frozen}>Làm lại</Button>}
-            {!(canApproveStart || canStartWork || canBackToTodo || canSubmitReview || canAccept || canRework || canRejectApproval || canRejectAcceptance || canReopen || canRedo) && !frozen && (
+            {isDraft && !canPublish && !frozen && (
+              <span className="text-sm text-muted-foreground">Đang chờ người tạo bấm «Giao việc».</span>
+            )}
+            {!isDraft && !(canApproveStart || canStartWork || canBackToTodo || canSubmitReview || canAccept || canRework || canRejectApproval || canRejectAcceptance || canReopen || canRedo) && !frozen && (
               <span className="text-sm text-muted-foreground">
                 {isRelated || isAdmin ? "Không có hành động nào khả dụng cho trạng thái hiện tại." : "Bạn không có quyền thao tác task này."}
               </span>
@@ -220,6 +249,7 @@ export function TaskDetailContent({ taskId }: { taskId: string }) {
           )}
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={statusVariant(t.status)}>{TASK_STATUS_LABELS[t.status as TaskStatusType] ?? t.status}</Badge>
+            {isDraft && <Badge className="border border-amber-500 bg-amber-400 font-bold uppercase tracking-wide text-white dark:border-amber-600 dark:bg-amber-600">Nháp</Badge>}
             <Badge variant={priorityVariant(t.priority)}>{TASK_PRIORITY_LABELS[t.priority as TaskPriorityType] ?? t.priority}</Badge>
             {t.dueDate ? (
               (() => {

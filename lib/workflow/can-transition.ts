@@ -49,11 +49,13 @@ export function canTransition(
   const isAssignee = user.id === task.assigneeId
   const isExecutor = user.id === task.executorId
   const isManager = user.role === "MANAGER"
+  const isAdmin = user.role === "ADMIN"
   // Leader của project = chủ sở hữu. Đây mới là người có quyền NGHIỆM THU,
   // KHÔNG phải creator (tránh MEMBER tạo task rồi tự nghiệm thu task mình làm).
   const isProjectOwner = user.id === task.projectOwnerId
-  // Người review ở cổng nghiệm thu: chủ project (leader) hoặc MANAGER toàn cục.
-  const canReview = isProjectOwner || isManager
+  // Người review ở cổng nghiệm thu: NGƯỜI GIAO VIỆC (assignee của task),
+  // chủ project (leader) hoặc MANAGER toàn cục. Creator KHÔNG tự nghiệm thu.
+  const canReview = isAssignee || isProjectOwner || isManager
 
   switch (targetStatus) {
     // Duyệt khởi đầu (PENDING_APPROVAL → TODO): người tạo / người được giao / MANAGER
@@ -78,13 +80,15 @@ export function canTransition(
     case "PENDING_ACCEPTANCE":
       return isExecutor || isAssignee || isCreator
 
-    // Nghiệm thu hoàn thành (PENDING_ACCEPTANCE → DONE): chỉ leader (chủ project) / MANAGER
+    // Nghiệm thu hoàn thành (PENDING_ACCEPTANCE → DONE): người giao việc / leader / MANAGER
     case "DONE":
-      return canReview
+      // Chỉ người giao việc hoặc ADMIN/MANAGER hệ thống được chốt.
+      // Chủ project KHÔNG tự động có quyền — phải là assignee (hoặc gán lại assignee mới).
+      return isAssignee || isAdmin || isManager
 
     // Từ chối — chỉ ở 2 cổng phê duyệt:
     //  - PENDING_APPROVAL → REJECTED: người duyệt (creator / assignee / MANAGER)
-    //  - PENDING_ACCEPTANCE → REJECTED: người nghiệm thu (leader / MANAGER)
+    //  - PENDING_ACCEPTANCE → REJECTED: người giao việc / leader / MANAGER
     case "REJECTED":
       if (task.status === "PENDING_APPROVAL") return isCreator || isAssignee || isManager
       if (task.status === "PENDING_ACCEPTANCE") return canReview

@@ -24,6 +24,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   })
   if (!task) return notFound("Task không tồn tại")
   if (!(await canAccessProject(user, task.projectId))) return forbidden()
+  // Nháp chỉ creator (hoặc chủ project / ADMIN) xem được — "Lưu ≠ Giao việc".
+  if (task.isDraft && user.role !== "ADMIN" && task.creatorId !== user.id && task.project?.ownerId !== user.id) {
+    return notFound("Task không tồn tại")
+  }
 
   return NextResponse.json({ data: task })
 }

@@ -18,6 +18,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!task) return notFound()
   const projectOwnerId = (task as unknown as { project?: { ownerId: string } | null }).project?.ownerId ?? null
 
+  // Bản nháp chưa "Giao việc" thì không được chuyển trạng thái — mọi hành động
+  // (kể cả ADMIN) phải đi qua /publish để creator chủ động gửi chính thức.
+  if (task.isDraft) {
+    return forbidden("Task đang là bản nháp. Người tạo cần bấm «Giao việc» trước khi chuyển trạng thái.")
+  }
+
   // Guard: task bị đóng băng khi assignee hoặc executor đã bị vô hiệu hóa
   {
     const ids = [task.assigneeId, task.executorId].filter(Boolean) as string[]

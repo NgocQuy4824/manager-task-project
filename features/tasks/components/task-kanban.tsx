@@ -50,9 +50,11 @@ function isOverdue(task: TaskItem) {
   return new Date(task.dueDate).getTime() < Date.now()
 }
 
-function SortableCard({ task, canReview, onRequestMove, onEdit, onDelete }: {
+function SortableCard({ task, canReview, currentUserId, onRequestMove, onEdit, onDelete }: {
   task: TaskItem
+  // Quyền review cấp project/global (leader / MANAGER / ADMIN).
   canReview: boolean
+  currentUserId?: string
   onRequestMove: (taskId: string, from: TaskStatusType, to: TaskStatusType) => void
   onEdit: (id: string) => void
   onDelete: (id: string) => void
@@ -60,17 +62,25 @@ function SortableCard({ task, canReview, onRequestMove, onEdit, onDelete }: {
   const overdue = isOverdue(task)
   const needsRework = task.status === "IN_PROGRESS" && !!task.reviewNote
   const frozen = task.assignee?.isActive === false || task.executor?.isActive === false
+  // Cổng PENDING_APPROVAL: chỉ creator / người giao được phê duyệt (khớp canTransition
+  // isCreator||isAssignee||isManager; executor chưa thấy task ở cổng này). Server cũng chặn kéo thả sai quyền.
+  const canApproveStart = (!!currentUserId && (task.creatorId === currentUserId || task.assigneeId === currentUserId)) || canReview
+  // Cổng nghiệm thu (PENDING_ACCEPTANCE → Kết thúc): người giao việc của chính task, hoặc leader/manager.
+  const isTaskAssignee = !!currentUserId && task.assigneeId === currentUserId
+  const canAccept = canReview || isTaskAssignee
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { status: task.status }, disabled: frozen })
+  // Nháp không được kéo thả — phải "Giao việc" (server chặn /transition khi isDraft).
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { status: task.status }, disabled: frozen || task.isDraft })
   const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }
 
   return (
-    <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className="w-full min-w-0 shrink-0 cursor-grab border bg-card shadow-soft transition-shadow hover:shadow-soft-lg active:cursor-grabbing">
-      <div className={`h-1 w-full rounded-t-lg ${PRIORITY_BAR[task.priority] ?? "bg-muted"}`} />
+    <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className={`w-full min-w-0 shrink-0 border shadow-soft transition-shadow ${task.isDraft ? "cursor-default border-dashed border-amber-400 bg-amber-50/60 dark:border-amber-500/60 dark:bg-amber-950/20" : "cursor-grab bg-card hover:shadow-soft-lg active:cursor-grabbing"}`}>
+      <div className={`h-1 w-full rounded-t-lg ${task.isDraft ? "bg-amber-400" : PRIORITY_BAR[task.priority] ?? "bg-muted"}`} />
       <CardContent className="space-y-2.5 p-3">
         <Link href={`/tasks/${task.id}`} className="block line-clamp-2 text-[13px] font-semibold leading-snug break-words text-foreground hover:underline" onClick={(e) => e.stopPropagation()}>{task.title}</Link>
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant={statusVariant(task.status)} className="text-[10px]">{TASK_STATUS_LABELS[task.status as TaskStatusType] ?? task.status}</Badge>
+          {task.isDraft && <Badge className="gap-1 border border-amber-500 bg-amber-400 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm dark:border-amber-600 dark:bg-amber-600">Nháp</Badge>}
           <Badge variant="outline" className="text-[10px]">{TASK_PRIORITY_LABELS[task.priority as TaskPriorityType] ?? task.priority}</Badge>
           {needsRework && <Badge variant="destructive" className="gap-1 text-[10px]"><RotateCcw className="h-2.5 w-2.5" />Cần làm lại</Badge>}
         </div>
@@ -102,8 +112,8 @@ function SortableCard({ task, canReview, onRequestMove, onEdit, onDelete }: {
           {frozen && <Badge variant="outline" className="border-amber-200 bg-amber-50 text-[10px] text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">Đóng băng</Badge>}
         </div>
         <div className="flex flex-wrap gap-1.5 pt-1" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-          {task.status === "PENDING_APPROVAL" && <Button size="sm" variant="secondary" className="h-7 text-xs" disabled={frozen} onClick={() => onRequestMove(task.id, task.status as TaskStatusType, "TODO")}>Duyệt</Button>}
-          {task.status === "PENDING_ACCEPTANCE" && canReview && <Button size="sm" variant="secondary" className="h-7 text-xs" disabled={frozen} onClick={() => onRequestMove(task.id, task.status as TaskStatusType, "DONE")}>Nghiệm thu</Button>}
+          {task.status === "PENDING_APPROVAL" && canApproveStart && <Button size="sm" variant="secondary" className="h-7 text-xs" disabled={frozen} onClick={() => onRequestMove(task.id, task.status as TaskStatusType, "TODO")}>Phê duyệt</Button>}
+          {task.status === "PENDING_ACCEPTANCE" && canAccept && <Button size="sm" variant="secondary" className="h-7 text-xs" disabled={frozen} onClick={() => onRequestMove(task.id, task.status as TaskStatusType, "DONE")}>Kết thúc</Button>}
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onEdit(task.id)}>Sửa</Button>
           <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => onDelete(task.id)}>Xóa</Button>
         </div>
@@ -112,10 +122,11 @@ function SortableCard({ task, canReview, onRequestMove, onEdit, onDelete }: {
   )
 }
 
-function Column({ status, tasks, canReview, onRequestMove, onEdit, onDelete }: {
+function Column({ status, tasks, canReview, currentUserId, onRequestMove, onEdit, onDelete }: {
   status: TaskStatusType
   tasks: TaskItem[]
   canReview: boolean
+  currentUserId?: string
   onRequestMove: (taskId: string, from: TaskStatusType, to: TaskStatusType) => void
   onEdit: (id: string) => void
   onDelete: (id: string) => void
@@ -126,7 +137,7 @@ function Column({ status, tasks, canReview, onRequestMove, onEdit, onDelete }: {
   return (
     <div
       ref={setNodeRef}
-      className={`flex max-h-[65vh] min-h-[340px] w-[268px] shrink-0 flex-col rounded-xl border bg-muted/30 p-2.5 shadow-soft sm:w-[280px] ${isOver ? "ring-2 ring-primary/30" : ""}`}
+      className={`flex max-h-[65vh] min-h-[340px] w-[268px] shrink-0 flex-col rounded-xl border bg-muted/30 p-2.5 shadow-soft sm:w-[280px] xl:w-auto xl:min-w-0 xl:flex-1 xl:shrink ${isOver ? "ring-2 ring-primary/30" : ""}`}
     >
       <div className="mb-2.5 flex items-center gap-1.5 px-0.5">
         <span className={`h-2 w-2 shrink-0 rounded-full ${COLUMN_DOT[status] ?? "bg-muted-foreground"}`} />
@@ -135,7 +146,7 @@ function Column({ status, tasks, canReview, onRequestMove, onEdit, onDelete }: {
       </div>
       <SortableContext id={status} items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
         <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden py-0.5 pr-0.5">
-          {tasks.map((t) => <SortableCard key={t.id} task={t} canReview={canReview} onRequestMove={onRequestMove} onEdit={onEdit} onDelete={onDelete} />)}
+          {tasks.map((t) => <SortableCard key={t.id} task={t} canReview={canReview} currentUserId={currentUserId} onRequestMove={onRequestMove} onEdit={onEdit} onDelete={onDelete} />)}
           {tasks.length === 0 && <p className="py-10 text-center text-xs text-muted-foreground">Kéo task vào đây</p>}
         </div>
       </SortableContext>
@@ -143,9 +154,10 @@ function Column({ status, tasks, canReview, onRequestMove, onEdit, onDelete }: {
   )
 }
 
-export function TaskKanban({ tasks, canReview, onRequestMove, onEdit, onDelete }: {
+export function TaskKanban({ tasks, canReview, currentUserId, onRequestMove, onEdit, onDelete }: {
   tasks: TaskItem[]
   canReview: boolean
+  currentUserId?: string
   onRequestMove: (taskId: string, from: TaskStatusType, to: TaskStatusType) => void
   onEdit: (id: string) => void
   onDelete: (id: string) => void
@@ -181,10 +193,10 @@ export function TaskKanban({ tasks, canReview, onRequestMove, onEdit, onDelete }
 
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="w-full overflow-x-auto overflow-y-hidden pb-2">
-        <div className="flex w-max gap-2.5 pr-1">
+      <div className="w-full overflow-x-auto overflow-y-hidden pb-2 xl:overflow-visible">
+        <div className="flex w-max gap-2.5 pr-1 xl:w-full xl:gap-2">
           {grouped.map(({ status, tasks: colTasks }) => (
-            <Column key={status} status={status} tasks={colTasks} canReview={canReview} onRequestMove={onRequestMove} onEdit={onEdit} onDelete={onDelete} />
+            <Column key={status} status={status} tasks={colTasks} canReview={canReview} currentUserId={currentUserId} onRequestMove={onRequestMove} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </div>
       </div>

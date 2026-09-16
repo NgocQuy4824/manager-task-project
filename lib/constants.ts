@@ -28,8 +28,10 @@ export const TASK_STATUS_LABELS: Record<TaskStatusType, string> = {
   PENDING_APPROVAL: "Chờ duyệt",
   TODO: "Cần làm",
   IN_PROGRESS: "Đang làm",
-  PENDING_ACCEPTANCE: "Chờ nghiệm thu",
-  DONE: "Hoàn thành",
+  // Đề bài: executor đưa task lên "Hoàn thành" (bên trong vẫn là PENDING_ACCEPTANCE, chờ nghiệm thu).
+  PENDING_ACCEPTANCE: "Hoàn thành",
+  // "Kết thúc" = DONE — chỉ người giao việc / leader / manager / admin chốt được.
+  DONE: "Kết thúc",
   REJECTED: "Bị từ chối",
 }
 
