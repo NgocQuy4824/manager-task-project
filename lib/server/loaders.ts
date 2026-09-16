@@ -1,4 +1,5 @@
 import { db } from "@/lib/db"
+import type { Prisma } from "@/lib/generated/prisma"
 import type { SessionUser } from "@/lib/server-auth"
 import type { TaskQueryInput } from "@/lib/validations/task"
 import type { StatsData } from "@/features/dashboard/hooks/use-stats"
@@ -949,7 +950,7 @@ export async function loadUsers({
   search,
   status,
 }: UsersListParams): Promise<UsersResponse> {
-  const where: any = {}
+  const where: Prisma.UserWhereInput = {}
 
   if (search) {
     where.OR = [

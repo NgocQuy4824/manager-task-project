@@ -1,6 +1,5 @@
 import { Suspense } from "react"
 import {
-  ArrowRight,
   CheckCircle2,
   ClipboardCheck,
   LockKeyhole,
